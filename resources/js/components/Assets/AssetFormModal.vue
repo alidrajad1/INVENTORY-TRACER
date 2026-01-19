@@ -96,23 +96,23 @@ const emit = defineEmits(['close', 'submit', 'sync']);
                 </div>
 
                 <div class="border rounded-md p-3 bg-slate-50 dark:bg-slate-900 mt-2">
-                    <div class="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Hardware Specs (Auto-Sync)</div>
+                    <div class="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Hardware Specifications</div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="grid gap-1">
                             <Label class="text-xs">Processor</Label>
-                            <Input v-model="form.hardware_specs.cpu" class="h-8 text-xs bg-white" readonly />
+                            <Input v-model="form.hardware_specs.cpu" class="h-8 text-xs bg-white" placeholder="e.g. Intel i5" />
                         </div>
                         <div class="grid gap-1">
                             <Label class="text-xs">RAM</Label>
-                            <Input v-model="form.hardware_specs.ram" class="h-8 text-xs bg-white" readonly />
+                            <Input v-model="form.hardware_specs.ram" class="h-8 text-xs bg-white" placeholder="e.g. 16GB" />
                         </div>
                         <div class="grid gap-1">
                             <Label class="text-xs">Storage</Label>
-                            <Input v-model="form.hardware_specs.storage" class="h-8 text-xs bg-white" readonly />
+                            <Input v-model="form.hardware_specs.storage" class="h-8 text-xs bg-white" placeholder="e.g. 512GB SSD" />
                         </div>
                         <div class="grid gap-1">
                             <Label class="text-xs">OS</Label>
-                            <Input v-model="form.hardware_specs.os" class="h-8 text-xs bg-white" readonly />
+                            <Input v-model="form.hardware_specs.os" class="h-8 text-xs bg-white" placeholder="e.g. Windows 11" />
                         </div>
                     </div>
                 </div>

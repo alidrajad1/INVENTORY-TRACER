@@ -2,63 +2,97 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = User::query()->with('roles'); // Eager load roles
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $users = $query->orderBy('name', 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        // Ambil list role untuk dropdown di modal
+        $roles = Role::pluck('name', 'name')->all();
+
+        return Inertia::render('Users/Index', [
+            'users' => $users,
+            'roles' => $roles,
+            'filters' => $request->only(['search']),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => 'required|exists:roles,name', // Validasi role
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        // Assign Role Spatie
+        $user->assignRole($request->role);
+
+        return redirect()->back()->with('success', 'User created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, User $user)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'required|exists:roles,name',
+            // Password opsional saat edit
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $userData = [
+            'name' => $request->name,
+            'email' => $request->email,
+        ];
+
+        // Hanya update password jika diisi
+        if ($request->filled('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+
+        $user->update($userData);
+        
+        // Sync Role (Ganti role lama dengan yang baru)
+        $user->syncRoles($request->role);
+
+        return redirect()->back()->with('success', 'User updated successfully.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy(User $user)
     {
-        //
-    }
+        if ($user->id === auth()->id()) {
+            return back()->withErrors(['error' => 'You cannot delete your own account.']);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $user->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->back()->with('success', 'User deleted successfully.');
     }
 }

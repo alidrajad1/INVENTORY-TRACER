@@ -195,6 +195,11 @@ const getStatusVariant = (status: string) => {
                         </DropdownMenu>
                     </TableCell>
                 </TableRow>
+                <TableRow v-if="assets.data.length === 0">
+                    <TableCell colspan="6" class="h-24 text-center text-muted-foreground">
+                        No assets found.
+                    </TableCell>
+                </TableRow>
             </TableBody>
         </Table>
     </div>

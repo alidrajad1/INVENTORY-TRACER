@@ -21,6 +21,7 @@ import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { route } from 'ziggy-js';
 import AppLogo from './AppLogo.vue';
+import audits from '@/routes/audits';
 
 interface NavGroup {
     label: string;
@@ -63,12 +64,12 @@ const navGroups: NavGroup[] = [
         items: [
             {
                 title: 'Users',
-                href: '/users',
+                href: route('users.index'),
                 icon: User
             },
             {
                 title: 'Employees',
-                href: '/employees',
+                href: route('employees.index'),
                 icon: Users
             },
         ]
@@ -78,12 +79,12 @@ const navGroups: NavGroup[] = [
         items: [
             {
                 title: 'Maintenance Logs',
-                href: '/maintenance-logs',
+                href: route('maintenances.index'),
                 icon: Wrench,
             },
             {
                 title: 'Audit Logs',
-                href: '/audit-logs',
+                href: route('audits.index'),
                 icon: BookOpen,
             },
         ]

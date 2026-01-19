@@ -12,6 +12,7 @@ class AssetHistory extends Model
 
     protected $fillable = [
         'asset_id',
+        'user_id',
         'employee_id',
         'action',
         'status_before',

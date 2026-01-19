@@ -87,7 +87,7 @@ const handleDelete = (category: any) => {
     <Head title="Categories" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 p-4 max-w-5xl mx-auto w-full">
+        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-6 rounded-xl border">
                 <div>
@@ -95,7 +95,7 @@ const handleDelete = (category: any) => {
                     <p class="text-muted-foreground">Manage asset classifications and groups.</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="">
+                    <div class="bg-primary/10 p-3 rounded-full">
                         <span class="text-primary font-bold text-xl">{{ categories.total }}</span>
                     </div>
                 </div>

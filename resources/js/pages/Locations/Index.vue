@@ -83,7 +83,7 @@ const handleDelete = (loc: any) => {
     <Head title="Locations" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 p-4 max-w-5xl mx-auto w-full">
+        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-6 rounded-xl border">
                 <div>
@@ -91,7 +91,7 @@ const handleDelete = (loc: any) => {
                     <p class="text-muted-foreground">Manage physical locations and buildings.</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <div class="">
+                    <div class="bg-primary/10 p-3 rounded-full">
                         <span class="text-primary font-bold text-xl">{{ locations.total }}</span>
                     </div>
                 </div>

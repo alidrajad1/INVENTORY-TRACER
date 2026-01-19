@@ -78,11 +78,18 @@ class AssetController extends Controller
 
     public function show(Asset $asset)
     {
-        $asset->load(['histories.user', 'histories.employee', 'maintenances']);
-        $asset->load('category', 'location', 'employee');
+        $asset->load([
+            'category',
+            'location',
+            'histories.user', 
+            'histories.employee',
+            'histories.location',
+            'maintenances'
+            ]);
 
         return Inertia::render('Assets/Show', [
-            'asset' => $asset
+            'asset' => $asset,
+            'histories' => $asset->histories
         ]);
     }
 
@@ -186,5 +193,72 @@ class AssetController extends Controller
         $pdf->setPaper($customPaper, 'portrait');
 
         return $pdf->stream('batch-stickers.pdf');
+    }
+
+    public function assign(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'notes' => 'nullable|string',
+            'location_id' => 'nullable|exists:locations,id',
+        ]);
+
+        // 1. Simpan Status Lama
+        $oldStatus = $asset->status;
+
+        // 2. Update Aset Utama
+        $asset->update([
+            'status' => 'BORROWED',
+            // Jika di tabel asset ada kolom employee_id (current holder), update juga:
+            // 'employee_id' => $request->employee_id 
+        ]);
+
+        // 3. Catat di History
+        \App\Models\AssetHistory::create([
+            'asset_id' => $asset->id,
+            'user_id' => auth()->id(), // ID Admin yang sedang login
+            'employee_id' => $request->employee_id,
+            'action' => 'assign',
+            'status_before' => $oldStatus,
+            'status_after' => 'BORROWED',
+            'condition' => 'GOOD', // Asumsi barang keluar kondisi bagus
+            'location_id' => $request->location_id,
+            'notes' => $request->notes,
+        ]);
+
+        return back()->with('success', 'Aset berhasil dipinjamkan');
+    }
+    public function returnAsset(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'condition' => 'required|in:GOOD,BAD,BROKEN', // Cek kondisi saat kembali
+            'notes' => 'nullable|string',
+        ]);
+
+        $oldStatus = $asset->status;
+
+        // 1. Update Aset Utama
+        $asset->update([
+            'status' => 'AVAILABLE',
+            // Kosongkan pemegang saat ini
+            // 'employee_id' => null 
+        ]);
+
+        // 2. Catat History Pengembalian
+        \App\Models\AssetHistory::create([
+            'asset_id' => $asset->id,
+            'user_id' => auth()->id(),
+            // Ambil employee terakhir dari history assign terakhir, atau dari request jika diinput manual
+            // Disini kita asumsikan null karena aset sudah kembali ke gudang, 
+            // ATAU kita isi ID pegawai yang mengembalikan untuk record.
+            'employee_id' => $request->employee_id,
+            'action' => 'return',
+            'status_before' => $oldStatus,
+            'status_after' => 'AVAILABLE',
+            'condition' => $request->condition,
+            'notes' => $request->notes,
+        ]);
+
+        return back()->with('success', 'Aset telah dikembalikan');
     }
 }

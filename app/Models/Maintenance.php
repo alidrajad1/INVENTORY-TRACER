@@ -11,15 +11,17 @@ class Maintenance extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'asset_id',
         'description',
+        'status',
         'scheduled_at',
         'completed_at',
     ];
 
     protected $casts = [
-        'scheduled_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'scheduled_at' => 'date',
+        'completed_at' => 'date',
     ];
 
     public function asset(): BelongsTo
