@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import {
-    MoreHorizontal, Eye, FileEdit, Trash2, Printer
+    MoreHorizontal, Eye, FileEdit, Trash2, Printer, ArrowUpRightFromCircle, CircleArrowOutDownLeft
 } from 'lucide-vue-next';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -23,7 +23,7 @@ const props = defineProps<{
     };
 }>();
 
-const emit = defineEmits(['edit', 'detail', 'delete', 'page-change']);
+const emit = defineEmits(['edit', 'detail', 'delete', 'assign', 'return', 'page-change']);
 
 // --- LOGIC CHECKBOX (ANTI-GAGAL) ---
 // Kita simpan ID sebagai String agar konsisten (misal: "1", "2")
@@ -44,7 +44,7 @@ const isAllSelected = computed(() => {
 // 2. Action: Toggle Select All (Header)
 const toggleSelectAll = (e: Event) => {
     const isChecked = (e.target as HTMLInputElement).checked;
-    
+
     // Ambil semua ID di halaman ini, konversi ke String
     const pageIds = props.assets.data.map(a => String(a.id));
 
@@ -116,8 +116,7 @@ const getStatusVariant = (status: string) => {
                     <TableHead class="w-[40px] pl-4">
                         <input type="checkbox"
                             class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary shadow-sm cursor-pointer accent-primary"
-                            :checked="isAllSelected" 
-                            @change="toggleSelectAll" />
+                            :checked="isAllSelected" @change="toggleSelectAll" />
                     </TableHead>
                     <TableHead class="w-[50px]">QR</TableHead>
                     <TableHead>Asset Info</TableHead>
@@ -128,15 +127,13 @@ const getStatusVariant = (status: string) => {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <TableRow v-for="asset in assets.data" :key="asset.id"
-                    :class="{ 'bg-muted/50': isSelected(asset.id) }"
+                <TableRow v-for="asset in assets.data" :key="asset.id" :class="{ 'bg-muted/50': isSelected(asset.id) }"
                     class="transition-colors hover:bg-muted/30">
-                    
+
                     <TableCell class="pl-4">
                         <input type="checkbox"
                             class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary shadow-sm cursor-pointer accent-primary"
-                            :checked="isSelected(asset.id)"
-                            @change="toggleSelection(asset.id)" />
+                            :checked="isSelected(asset.id)" @change="toggleSelection(asset.id)" />
                     </TableCell>
 
                     <TableCell>
@@ -190,6 +187,15 @@ const getStatusVariant = (status: string) => {
                                 <DropdownMenuItem @click="emit('delete', asset.id)"
                                     class="text-red-600 focus:text-red-600">
                                     <Trash2 class="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                                <DropdownMenuItem v-if="asset.status === 'AVAILABLE'" @click="emit('assign', asset)"
+                                    class="text-blue-600 focus:text-blue-600 cursor-pointer">
+                                    <ArrowUpRightFromCircle class="mr-2 h-4 w-4" /> Check Out / Assign
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem v-if="asset.status === 'BORROWED'" @click="emit('return', asset)"
+                                    class="text-orange-600 focus:text-orange-600 cursor-pointer">
+                                    <CircleArrowOutDownLeft  class="mr-2 h-4 w-4" /> Return / Check In
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

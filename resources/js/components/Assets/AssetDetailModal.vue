@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { 
-    Cpu, HardDrive, MemoryStick, Monitor, History 
+import {
+    Cpu, HardDrive, MemoryStick, Monitor, History
 } from 'lucide-vue-next';
-import { 
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle 
+import {
+    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -38,7 +38,7 @@ const formatDate = (dateString: string) => {
 
 const props = defineProps<{
     show: boolean;
-    asset: any; 
+    asset: any;
 }>();
 
 const emit = defineEmits(['close', 'edit']);
@@ -50,19 +50,18 @@ const emit = defineEmits(['close', 'edit']);
             <DialogHeader>
                 <DialogTitle>Asset Details</DialogTitle>
             </DialogHeader>
-            
+
             <div v-if="asset" class="grid gap-6 py-4">
                 <div class="flex items-start gap-4">
                     <div class="h-24 w-24 bg-white rounded-lg border p-1 shadow-sm shrink-0">
                         <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${asset.asset_tag}`"
-                            alt="QR Code" 
-                            class="w-full h-full object-contain" 
-                        />
+                            alt="QR Code" class="w-full h-full object-contain" />
                     </div>
                     <div>
                         <h3 class="font-bold text-lg">{{ asset.name }}</h3>
                         <p class="text-sm text-muted-foreground mb-1">{{ asset.asset_tag }}</p>
-                        <span :class="['px-2 py-0.5 rounded-full text-xs font-medium border', getStatusColor(asset.status)]">
+                        <span
+                            :class="['px-2 py-0.5 rounded-full text-xs font-medium border', getStatusColor(asset.status)]">
                             {{ asset.status }}
                         </span>
                     </div>
@@ -141,12 +140,12 @@ const emit = defineEmits(['close', 'edit']);
                         </h4>
                     </div>
 
-                    <div v-if="asset.histories && asset.histories.length > 0" 
-                         class="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-                        
-                        <div v-for="history in asset.histories" :key="history.id" 
-                             class="flex justify-between items-start text-sm border-b pb-2 last:border-0">
-                            
+                    <div v-if="asset.histories && asset.histories.length > 0"
+                        class="space-y-3 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+
+                        <div v-for="history in asset.histories" :key="history.id"
+                            class="flex justify-between items-start text-sm border-b pb-2 last:border-0">
+
                             <div>
                                 <div class="font-medium">
                                     {{ history.employee ? history.employee.name : 'Unknown / Warehouse' }}
@@ -163,7 +162,8 @@ const emit = defineEmits(['close', 'edit']);
                                 <div class="text-xs text-muted-foreground mb-1">
                                     {{ formatDate(history.created_at) }}
                                 </div>
-                                <span :class="['text-[10px] px-1.5 py-0.5 rounded border capitalize', getActionColor(history.action)]">
+                                <span
+                                    :class="['text-[10px] px-1.5 py-0.5 rounded border capitalize', getActionColor(history.action)]">
                                     {{ history.action }}
                                 </span>
                             </div>
@@ -190,9 +190,11 @@ const emit = defineEmits(['close', 'edit']);
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 4px;

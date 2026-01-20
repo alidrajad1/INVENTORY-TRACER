@@ -24,6 +24,8 @@ Route::get('dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
+    Route::post('/assets/{asset}/return', [AssetController::class, 'returnAsset'])->name('assets.return');
+    Route::post('/assets/{asset}/assign', [AssetController::class, 'assign'])->name('assets.assign');
     Route::post('/assets/glpi-sync', [AssetController::class, 'syncGlpi'])->name('assets.sync');
     Route::get('/assets/{asset}/print-label', [AssetController::class, 'printLabel'])->name('assets.print-label');
     Route::get('/assets/print-batch', [AssetController::class, 'printBatchLabel'])->name('assets.print-batch');
@@ -38,10 +40,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('categories', CategoryController::class);
 
     Route::resource('maintenance-logs', MaintenanceController::class)
-        ->names('maintenances'); 
+        ->names('maintenances');
 
-    Route::resource('audit-logs', AuditController::class)
-        ->names('audits');
+    Route::get('audits', [AuditController::class, 'index'])->name('audits.index');
+    Route::post('audits', [AuditController::class, 'store'])->name('audits.store');
+    Route::resource('audits', AuditController::class);
+
 
     Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
     Route::get('/scan/{asset_tag}', [ScanController::class, 'show'])->name('scan.result');
@@ -49,4 +53,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

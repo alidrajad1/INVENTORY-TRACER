@@ -17,6 +17,7 @@ class AssetHistory extends Model
         'action',
         'status_before',
         'status_after',
+        'condition',
         'location_id',
         'notes',
     ];

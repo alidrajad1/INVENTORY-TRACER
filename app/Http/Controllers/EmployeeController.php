@@ -24,7 +24,7 @@ class EmployeeController extends Controller
         // withCount('assets') untuk melihat aset yang sedang dipinjam
         $employees = $query->withCount('assets')
             ->with([
-                'histories.assets' => function ($q) {
+                'histories.asset' => function ($q) {
                     $q->select('id', 'name', 'asset_tag');
                 }
             ])

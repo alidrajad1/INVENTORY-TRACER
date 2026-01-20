@@ -16,12 +16,16 @@ import AssetStats from '@/components/Assets/AssetStats.vue';
 import AssetTable from '@/components/Assets/AssetTable.vue';  
 import AssetFormModal from '@/components/Assets/AssetFormModal.vue';
 import AssetDetailModal from '@/components/Assets/AssetDetailModal.vue';
+import AssignModal from '@/components/Assets/AssignModal.vue'; 
+import ReturnModal from '@/components/Assets/ReturnModal.vue';
 
 // --- PROPS ---
 const props = defineProps<{
     assets: any;
     categories: any[];
     locations: any[];
+    // --- NEW: Terima data employees dari controller
+    employees: any[]; 
     filters: any;
     stats: any;
 }>();
@@ -36,12 +40,18 @@ const isDetailOpen = ref(false);
 const selectedAsset = ref<any>(null);
 const isSyncing = ref(false);
 
+// --- NEW: State untuk Assign Modal ---
+const isAssignModalOpen = ref(false);
+const assigningAsset = ref<any>(null);
+const isReturnModalOpen = ref(false);
+const returningAsset = ref<any>(null);
+
 // --- SEARCH LOGIC ---
 watch(search, debounce((val: string) => {
     router.get(route('assets.index'), { search: val }, { preserveState: true, replace: true });
 }, 300));
 
-// --- FORM HANDLING ---
+// --- FORM HANDLING (Create/Edit) ---
 const form = useForm({
     asset_tag: '', serial_number: '', name: '', brand: '', model: '',
     category_id: null, location_id: null, status: 'AVAILABLE',
@@ -58,7 +68,6 @@ const openCreate = () => {
 const openEdit = (asset: any) => {
     selectedAsset.value = asset;
     form.clearErrors();
-    // Copy data to form
     Object.assign(form, {
         asset_tag: asset.asset_tag,
         serial_number: asset.serial_number,
@@ -83,6 +92,17 @@ const handleSubmit = () => {
     const options = { onSuccess: () => isFormOpen.value = false };
     if (formMode.value === 'create') form.post(route('assets.store'), options);
     else form.put(route('assets.update', selectedAsset.value.id), options);
+};
+
+// --- NEW: Logic Buka Modal Assign ---
+const openAssign = (asset: any) => {
+    assigningAsset.value = asset;
+    isAssignModalOpen.value = true;
+};
+
+const openReturn = (asset: any) => {
+    returningAsset.value = asset;
+    isReturnModalOpen.value = true;
 };
 
 // --- API ACTIONS ---
@@ -132,6 +152,8 @@ const handleDelete = (id: number) => {
                     @detail="(asset) => { selectedAsset = asset; isDetailOpen = true; }"
                     @edit="openEdit"
                     @delete="handleDelete"
+                    @assign="openAssign"
+                    @return="openReturn"
                     @page-change="(url) => router.get(url)"
                 />
             </div>
@@ -155,5 +177,19 @@ const handleDelete = (id: number) => {
             @close="isDetailOpen = false" 
             @edit="() => { isDetailOpen = false; openEdit(selectedAsset); }" 
         />
+
+        <AssignModal 
+            :show="isAssignModalOpen" 
+            :asset="assigningAsset"
+            :employees="employees"
+            @close="isAssignModalOpen = false"
+        />
+
+        <ReturnModal 
+            :show="isReturnModalOpen" 
+            :asset="returningAsset"
+            @close="isReturnModalOpen = false"
+        />
+
     </AppLayout>
 </template>

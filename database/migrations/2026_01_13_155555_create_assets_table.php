@@ -27,6 +27,8 @@ return new class extends Migration
             // Status
             $table->enum('status',['AVAILABLE', 'BORROWED', 'MAINTENANCE', 'LOST', 'DISPOSED'])->default('AVAILABLE')->nullable();
             // Monitoring fields
+
+            $table->timestamp('last_audit_date')->nullable();
             $table->timestamp('last_seen_at')->nullable();
             $table->json('hardware_specs')->nullable();
             // Timestamps

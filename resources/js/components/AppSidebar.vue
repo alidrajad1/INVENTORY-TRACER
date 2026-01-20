@@ -78,12 +78,12 @@ const navGroups: NavGroup[] = [
         label: 'System',
         items: [
             {
-                title: 'Maintenance Logs',
+                title: 'Maintenance Assets',
                 href: route('maintenances.index'),
                 icon: Wrench,
             },
             {
-                title: 'Audit Logs',
+                title: 'Audit Assets',
                 href: route('audits.index'),
                 icon: BookOpen,
             },

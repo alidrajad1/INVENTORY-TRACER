@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Category;
+use App\Models\Employee;
 use App\Models\Location;
 use App\Services\GlpiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -17,7 +17,16 @@ class AssetController extends Controller
     {
         // 1. Query Data Aset (Search & Filter)
         $assets = Asset::query()
-            ->with(['category', 'location', 'employee'])
+            ->with([
+                'category',
+                'location',
+                'employee',
+                'histories' => function ($query) {
+                    $query->latest()->limit(5);
+                },
+                'histories.user', 
+                'histories.employee'
+            ])
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('asset_tag', 'like', "%{$search}%")
@@ -42,6 +51,7 @@ class AssetController extends Controller
             'assets' => $assets,
             'filters' => $request->only(['search', 'status']),
             'stats' => $stats,
+            'employees' => Employee::where('is_active', true)->orderBy('name')->get(),
             'categories' => Category::select('id', 'name')->orderBy('name')->get(),
             'locations' => Location::select('id', 'name')->orderBy('name')->get(),
         ]);
@@ -62,6 +72,7 @@ class AssetController extends Controller
             'category_id' => 'required|exists:categories,id',
             'location_id' => 'required|exists:locations,id',
             'serial_number' => 'nullable|string|unique:assets,serial_number',
+            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
             'hardware_specs' => 'nullable|array', // JSON dari GLPI
@@ -81,11 +92,11 @@ class AssetController extends Controller
         $asset->load([
             'category',
             'location',
-            'histories.user', 
+            'histories.user',
             'histories.employee',
             'histories.location',
             'maintenances'
-            ]);
+        ]);
 
         return Inertia::render('Assets/Show', [
             'asset' => $asset,
@@ -110,7 +121,7 @@ class AssetController extends Controller
             'location_id' => 'required|exists:locations,id',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
-            // Tambahkan ini agar saat Edit -> Sync GLPI, data spek baru bisa tersimpan
+            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
             'hardware_specs' => 'nullable|array',
         ]);
 
@@ -203,26 +214,24 @@ class AssetController extends Controller
             'location_id' => 'nullable|exists:locations,id',
         ]);
 
-        // 1. Simpan Status Lama
         $oldStatus = $asset->status;
 
-        // 2. Update Aset Utama
+        // --- UPDATE ASET UTAMA ---
         $asset->update([
             'status' => 'BORROWED',
-            // Jika di tabel asset ada kolom employee_id (current holder), update juga:
-            // 'employee_id' => $request->employee_id 
+            'employee_id' => $request->employee_id, // <--- HAPUS KOMENTAR (UNCOMMENT)
         ]);
 
-        // 3. Catat di History
+        // --- CATAT HISTORY ---
         \App\Models\AssetHistory::create([
             'asset_id' => $asset->id,
-            'user_id' => auth()->id(), // ID Admin yang sedang login
+            'user_id' => auth()->id(),
             'employee_id' => $request->employee_id,
             'action' => 'assign',
             'status_before' => $oldStatus,
             'status_after' => 'BORROWED',
-            'condition' => 'GOOD', // Asumsi barang keluar kondisi bagus
-            'location_id' => $request->location_id,
+            'condition' => 'GOOD',
+            'location_id' => $request->location_id ?? $asset->location_id,
             'notes' => $request->notes,
         ]);
 
@@ -231,34 +240,33 @@ class AssetController extends Controller
     public function returnAsset(Request $request, Asset $asset)
     {
         $request->validate([
-            'condition' => 'required|in:GOOD,BAD,BROKEN', // Cek kondisi saat kembali
+            'condition' => 'required|in:GOOD,BAD,BROKEN',
             'notes' => 'nullable|string',
         ]);
 
         $oldStatus = $asset->status;
+        $lastEmployeeId = $asset->employee_id; // Simpan dulu siapa peminjam terakhir
 
-        // 1. Update Aset Utama
+        // --- UPDATE ASET UTAMA ---
         $asset->update([
             'status' => 'AVAILABLE',
-            // Kosongkan pemegang saat ini
-            // 'employee_id' => null 
+            'employee_id' => null, // <--- HAPUS KOMENTAR (Set null karena kembali ke gudang)
         ]);
 
-        // 2. Catat History Pengembalian
+        // --- CATAT HISTORY ---
         \App\Models\AssetHistory::create([
             'asset_id' => $asset->id,
             'user_id' => auth()->id(),
-            // Ambil employee terakhir dari history assign terakhir, atau dari request jika diinput manual
-            // Disini kita asumsikan null karena aset sudah kembali ke gudang, 
-            // ATAU kita isi ID pegawai yang mengembalikan untuk record.
-            'employee_id' => $request->employee_id,
+            'employee_id' => $lastEmployeeId, // Catat siapa yang mengembalikan
             'action' => 'return',
             'status_before' => $oldStatus,
             'status_after' => 'AVAILABLE',
             'condition' => $request->condition,
             'notes' => $request->notes,
+            'location_id' => $asset->location_id,
         ]);
 
         return back()->with('success', 'Aset telah dikembalikan');
     }
+
 }
