@@ -9,16 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
-// Helper: Warna Badge untuk status Aksi (Assign vs Return)
 const getActionColor = (action: string) => {
     switch (action?.toLowerCase()) {
-        case 'assign': return 'bg-blue-50 text-blue-700 border-blue-200'; // Barang Masuk
-        case 'return': return 'bg-green-50 text-green-700 border-green-200'; // Barang Kembali
+        case 'assign': return 'bg-blue-50 text-blue-700 border-blue-200';
+        case 'return': return 'bg-green-50 text-green-700 border-green-200'; 
         default: return 'bg-gray-50 text-gray-600 border-gray-200';
     }
 };
 
-// Helper: Inisial Nama (John Doe -> JD)
 const getInitials = (name: string) => {
     if (!name) return '??';
     return name
@@ -29,7 +27,6 @@ const getInitials = (name: string) => {
         .substring(0, 2);
 };
 
-// Helper: Format Tanggal
 const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -159,7 +156,6 @@ const emit = defineEmits(['close', 'edit']);
 </template>
 
 <style scoped>
-/* Scrollbar halus */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
 }

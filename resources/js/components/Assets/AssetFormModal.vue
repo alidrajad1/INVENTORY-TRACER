@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const props = defineProps<{
     show: boolean;
     mode: 'create' | 'edit';
-    form: any; // Inertia Form Object
+    form: any; 
     categories: Array<{ id: number; name: string }>;
     locations: Array<{ id: number; name: string }>;
     isSyncing: boolean;

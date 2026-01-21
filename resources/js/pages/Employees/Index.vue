@@ -8,7 +8,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch'; // Pastikan ada komponen Switch (shadcn)
+import { Switch } from '@/components/ui/switch'; 
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
@@ -36,7 +36,7 @@ const form = useForm({
     email: '',
     position: '',
     department: '',
-    is_active: true, // Default active
+    is_active: true, 
 });
 
 watch(search, debounce((val: string) => {

@@ -2,63 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Asset;
+use App\Models\AssetHistory;
+use App\Models\Maintenance;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
-    }
+        $totalAssets = Asset::count();
+        $borrowedAssets = Asset::where('status', 'BORROWED')->count();
+        $maintenanceAssets = Asset::where('status', 'MAINTENANCE')->count();
+        $availableAssets = Asset::where('status', 'AVAILABLE')->count();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        $auditOverdue = Asset::where(function ($q) {
+            $q->whereNull('last_audit_date')
+              ->orWhere('last_audit_date', '<', now()->subMonths(3));
+        })->count();
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $pendingMaintenance = Maintenance::where('status', 'PENDING')->count();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        $recentActivities = AssetHistory::with(['asset', 'user', 'employee'])
+            ->latest()
+            ->limit(6)
+            ->get();
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        $categories = \App\Models\Category::withCount('assets')
+            ->orderByDesc('assets_count')
+            ->limit(5)
+            ->get();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return Inertia::render('Dashboard', [
+            'stats' => [
+                'total' => $totalAssets,
+                'borrowed' => $borrowedAssets,
+                'maintenance' => $maintenanceAssets,
+                'available' => $availableAssets,
+                'audit_overdue' => $auditOverdue,
+                'maintenance_pending' => $pendingMaintenance,
+            ],
+            'activities' => $recentActivities,
+            'top_categories' => $categories,
+        ]);
     }
 }

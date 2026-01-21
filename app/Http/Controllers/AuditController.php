@@ -10,15 +10,11 @@ use Illuminate\Support\Facades\DB;
 
 class AuditController extends Controller
 {
-    /**
-     * Menampilkan daftar aset untuk diaudit.
-     * Diurutkan berdasarkan yang paling lama tidak dicek.
-     */
+
     public function index(Request $request)
     {
         $query = Asset::query()->with(['category', 'location']);
 
-        // 1. Filter Pencarian
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('asset_tag', 'like', '%' . $request->search . '%')
@@ -26,17 +22,14 @@ class AuditController extends Controller
             });
         }
 
-        // 2. Subquery: Ambil Kondisi Terakhir dari History Audit
-        // Ini akan membuat kolom virtual 'last_audit_condition' di hasil query
         $query->addSelect([
             'last_audit_condition' => AssetHistory::select('condition')
                 ->whereColumn('asset_id', 'assets.id')
-                ->where('action', 'audit') // Hanya ambil history tipe audit
+                ->where('action', 'audit') 
                 ->latest()
                 ->limit(1)
-        ])->addSelect('assets.*'); // Penting: Tetap ambil semua kolom assets
+        ])->addSelect('assets.*'); 
 
-        // 3. Sorting: Prioritaskan yang belum pernah diaudit (NULL), lalu berdasarkan tanggal terlama
         $assets = $query->orderByRaw('last_audit_date IS NULL DESC')
             ->orderBy('last_audit_date', 'asc')
             ->paginate(10)
@@ -48,9 +41,6 @@ class AuditController extends Controller
         ]);
     }
 
-    /**
-     * Menyimpan hasil Audit (Verifikasi)
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -66,8 +56,6 @@ class AuditController extends Controller
             $statusBefore = $asset->status;
             $oldLocation = $asset->location_id;
 
-            // 1. Update Aset Utama
-            // Update tanggal audit & lokasi (jika berubah)
             $updateData = ['last_audit_date' => now()];
             
             if ($request->location_id && $request->location_id != $oldLocation) {
@@ -76,15 +64,14 @@ class AuditController extends Controller
             
             $asset->update($updateData);
 
-            // 2. Catat History (Audit Trail)
             AssetHistory::create([
                 'asset_id' => $asset->id,
                 'user_id' => auth()->id(),
-                'employee_id' => $asset->employee_id, // Tetap gunakan pemegang saat ini
+                'employee_id' => $asset->employee_id, 
                 'action' => 'audit',
                 'status_before' => $statusBefore,
-                'status_after' => $statusBefore, // Audit tidak mengubah status (AVAILABLE/BORROWED)
-                'condition' => $request->condition, // Simpan kondisi fisik hasil cek
+                'status_after' => $statusBefore, 
+                'condition' => $request->condition,
                 'location_id' => $request->location_id ?? $oldLocation,
                 'notes' => $request->notes,
             ]);

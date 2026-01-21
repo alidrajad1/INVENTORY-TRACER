@@ -7,7 +7,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-// Helper warna status Aset
 const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
         case 'AVAILABLE': return 'bg-green-100 text-green-700 border-green-200';
@@ -18,7 +17,6 @@ const getStatusColor = (status: string) => {
     }
 };
 
-// Helper warna aksi History
 const getActionColor = (action: string) => {
     switch (action?.toLowerCase()) {
         case 'assign': return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -28,7 +26,6 @@ const getActionColor = (action: string) => {
     }
 };
 
-// Helper format tanggal
 const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -186,7 +183,6 @@ const emit = defineEmits(['close', 'edit']);
 </template>
 
 <style scoped>
-/* Opsional: Style untuk scrollbar agar lebih rapi */
 .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
 }

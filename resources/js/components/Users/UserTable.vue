@@ -24,7 +24,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit', 'delete', 'page-change']);
 
-// --- LOGIC CHECKBOX ---
 const selectedIds = ref<string[]>([]);
 const isSelected = (id: any) => selectedIds.value.includes(String(id));
 
@@ -57,7 +56,6 @@ const toggleSelection = (rawId: any) => {
 
 watch(() => props.users.data, () => selectedIds.value = []);
 
-// Helper ambil inisial nama (John Doe -> JD)
 const getInitials = (name: string) => {
     return name
         .split(' ')

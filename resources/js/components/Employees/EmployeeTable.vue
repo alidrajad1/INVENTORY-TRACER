@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { 
-    MoreHorizontal, Pencil, Trash2, User, Eye, BadgeCheck, Ban // Tambahkan Eye icon
+    MoreHorizontal, Pencil, Trash2, User, Eye, BadgeCheck, Ban
 } from 'lucide-vue-next';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -20,10 +20,8 @@ const props = defineProps<{
     };
 }>();
 
-// --- FIX DISINI: Tambahkan 'detail' ke dalam array emits ---
 const emit = defineEmits(['detail', 'edit', 'delete', 'page-change']);
 
-// ... (Sisa logic checkbox tetap sama, tidak berubah) ...
 const selectedIds = ref<string[]>([]);
 const isSelected = (id: any) => selectedIds.value.includes(String(id));
 

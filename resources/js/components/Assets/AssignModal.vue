@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select';
 import { route } from 'ziggy-js';
 
-// Props yang diterima dari Index.vue
 const props = defineProps<{
     show: boolean;
     asset: any;
@@ -22,7 +21,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['close']);
 
-// Setup Form Inertia
 const form = useForm({
     employee_id: '',
     assigned_date: new Date().toISOString().split('T')[0], // Default Hari Ini
@@ -38,7 +36,6 @@ const handleSubmit = () => {
             emit('close');
         },
         onError: () => {
-            // Optional: Handle error toast here
         }
     });
 };

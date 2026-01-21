@@ -20,7 +20,7 @@ const props = defineProps<{
 const emit = defineEmits(['close']);
 
 const form = useForm({
-    condition: 'GOOD', // Default kondisi saat kembali
+    condition: 'GOOD',
     notes: '',
 });
 

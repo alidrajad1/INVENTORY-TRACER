@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::query()->with('roles'); // Eager load roles
+        $query = User::query()->with('roles');
 
         if ($request->search) {
             $query->where(function ($q) use ($request) {
@@ -26,7 +26,6 @@ class UserController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // Ambil list role untuk dropdown di modal
         $roles = Role::pluck('name', 'name')->all();
 
         return Inertia::render('Users/Index', [
@@ -42,7 +41,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => 'required|exists:roles,name', // Validasi role
+            'role' => 'required|exists:roles,name', 
         ]);
 
         $user = User::create([
@@ -63,7 +62,6 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'role' => 'required|exists:roles,name',
-            // Password opsional saat edit
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -72,14 +70,12 @@ class UserController extends Controller
             'email' => $request->email,
         ];
 
-        // Hanya update password jika diisi
         if ($request->filled('password')) {
             $userData['password'] = Hash::make($request->password);
         }
 
         $user->update($userData);
-        
-        // Sync Role (Ganti role lama dengan yang baru)
+
         $user->syncRoles($request->role);
 
         return redirect()->back()->with('success', 'User updated successfully.');

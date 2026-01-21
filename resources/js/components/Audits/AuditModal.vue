@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { watch } from 'vue'; // <--- 1. Pastikan import watch
+import { watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ClipboardCheck } from 'lucide-vue-next';
 import { 
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription // <--- Tambahkan Description biar ga warning
+    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';

@@ -79,7 +79,7 @@
             </td>
 
             <td class="col-info">
-                <div class="company">PT. PERUSAHAAN ANDA</div>
+                <div class="company">PT. PLN NUSANTARA POWER UP GRESIK</div>
                 <div class="tag">{{ $asset->asset_tag }}</div>  
                 <div class="name">
                     {{ Str::limit($asset->name, 25) }}

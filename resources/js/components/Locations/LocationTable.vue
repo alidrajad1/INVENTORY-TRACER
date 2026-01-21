@@ -13,7 +13,6 @@ import {
     DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 
-// --- PROPS ---
 const props = defineProps<{
     locations: { 
         data: any[], 
@@ -24,17 +23,14 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit', 'delete', 'page-change']);
 
-// --- LOGIC CHECKBOX (Sama dengan Category & Asset) ---
 const selectedIds = ref<string[]>([]);
 const isSelected = (id: any) => selectedIds.value.includes(String(id));
 
-// 1. Computed: Select All
 const isAllSelected = computed(() => {
     if (props.locations.data.length === 0) return false;
     return props.locations.data.every(loc => isSelected(loc.id));
 });
 
-// 2. Action: Toggle Select All
 const toggleSelectAll = (e: Event) => {
     const isChecked = (e.target as HTMLInputElement).checked;
     const pageIds = props.locations.data.map(l => String(l.id));
@@ -48,7 +44,6 @@ const toggleSelectAll = (e: Event) => {
     }
 };
 
-// 3. Action: Toggle Single
 const toggleSelection = (rawId: any) => {
     const id = String(rawId);
     if (selectedIds.value.includes(id)) {
@@ -58,7 +53,6 @@ const toggleSelection = (rawId: any) => {
     }
 };
 
-// Reset saat ganti halaman
 watch(() => props.locations.data, () => {
     selectedIds.value = [];
 });

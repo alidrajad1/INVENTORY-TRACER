@@ -25,10 +25,10 @@ const formatDate = (date: string) => {
 
 const getStatusColor = (status: string) => {
     switch(status) {
-        case 'scheduled': return 'secondary'; // Abu-abu
-        case 'in_progress': return 'default'; // Hitam/Biru (Primary)
-        case 'completed': return 'outline';   // Hijau (Custom class nanti)
-        case 'canceled': return 'destructive'; // Merah
+        case 'scheduled': return 'secondary';
+        case 'in_progress': return 'default';
+        case 'completed': return 'outline';
+        case 'canceled': return 'destructive';
         default: return 'outline';
     }
 };

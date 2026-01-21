@@ -4,7 +4,6 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import { Search, Plus } from 'lucide-vue-next';
 
-// UI Components
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,10 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { route } from 'ziggy-js';
 
-// Import Komponen Tabel Baru
 import CategoryTable from '@/components/Categories/CategoryTable.vue';
 
-// --- PROPS ---
 const props = defineProps<{
     categories: any;
     filters: { search: string };
@@ -25,7 +22,6 @@ const props = defineProps<{
 
 const breadcrumbs = [{ title: 'Categories', href: route('categories.index') }];
 
-// --- STATE ---
 const search = ref(props.filters.search || '');
 const isModalOpen = ref(false);
 const isEditMode = ref(false);
@@ -33,7 +29,6 @@ const editingCategory = ref<any>(null);
 
 const form = useForm({ name: '', code: '' });
 
-// --- SEARCH LOGIC ---
 watch(search, debounce((val: string) => {
     router.get(
         route('categories.index'),
@@ -42,7 +37,6 @@ watch(search, debounce((val: string) => {
     );
 }, 300));
 
-// --- ACTIONS ---
 const openCreate = () => {
     isEditMode.value = false;
     form.reset();

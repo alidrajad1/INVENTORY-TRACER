@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Models\AssetHistory;
 use App\Services\GlpiService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,7 +16,6 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Query Data Aset (Search & Filter)
         $assets = Asset::query()
             ->with([
                 'category',
@@ -39,14 +39,12 @@ class AssetController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // 2. Hitung Statistik
         $stats = [
             'total' => Asset::count(),
             'available' => Asset::where('status', 'AVAILABLE')->count(),
             'maintenance' => Asset::where('status', 'MAINTENANCE')->count(),
         ];
 
-        // 3. Render ke Vue
         return Inertia::render('Assets/Index', [
             'assets' => $assets,
             'filters' => $request->only(['search', 'status']),
@@ -75,13 +73,11 @@ class AssetController extends Controller
             'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
-            'hardware_specs' => 'nullable|array', // JSON dari GLPI
+            'hardware_specs' => 'nullable|array', 
         ]);
 
-        // Status default
         $validated['status'] = 'AVAILABLE';
 
-        // Asset tag akan digenerate otomatis oleh Model (Boot method)
         Asset::create($validated);
 
         return redirect()->route('assets.index')->with('success', 'Aset berhasil didaftarkan.');
@@ -136,20 +132,16 @@ class AssetController extends Controller
         return redirect()->route('assets.index')->with('success', 'Aset berhasil dihapus.');
     }
 
-    // --- GLPI SYNC FUNCTION (Updated) ---
     public function syncGlpi(Request $request, GlpiService $glpiService)
     {
         $request->validate(['serial_number' => 'required|string']);
 
         try {
-            // Pastikan GlpiService->searchBySerial() mengembalikan array lengkap termasuk 'os'
             $data = $glpiService->searchBySerial($request->serial_number);
 
             if (!$data) {
                 return back()->withErrors(['serial_number' => 'Serial Number tidak ditemukan di GLPI']);
             }
-
-            // Return JSON ke Vue untuk autofill form
             return response()->json([
                 'specs' => [
                     'brand' => $data['manufacturer'] ?? null,
@@ -157,9 +149,7 @@ class AssetController extends Controller
                     'hardware_specs' => [
                         'cpu' => $data['cpu'] ?? null,
                         'ram' => $data['ram'] ?? null,
-                        // Sesuaikan key dengan output Command ('storage' bukan 'disk')
                         'storage' => $data['storage'] ?? $data['disk'] ?? null,
-                        // Tambahkan OS di sini
                         'os' => $data['os'] ?? null,
                     ]
                 ]
@@ -171,35 +161,25 @@ class AssetController extends Controller
     }
     public function printLabel(Asset $asset)
     {
-        // Load view khusus untuk label
         $pdf = Pdf::loadView('pdf.sticker', ['asset' => $asset]);
 
-        // Set ukuran kertas custom (contoh: 5cm x 3cm)
-        // Format: [0, 0, width_in_points, height_in_points]
-        // 1 cm = 28.35 poin
-        // Jadi 5cm x 3cm = [0, 0, 141.7, 85.0]
         $pdf->setPaper([0, 0, 141.7, 85.0], 'portrait');
 
-        // Render dan stream (buka di browser)
         return $pdf->stream('sticker-' . $asset->asset_tag . '.pdf');
     }
 
     public function printBatchLabel(Request $request)
     {
-        // 1. Ambil ID dari query string ?ids[]=1&ids[]=2
         $ids = $request->query('ids', []);
 
         if (empty($ids)) {
             return back()->with('error', 'Tidak ada aset yang dipilih.');
         }
 
-        // 2. Ambil data aset berdasarkan ID
         $assets = Asset::whereIn('id', $ids)->get();
 
-        // 3. Load view khusus bulk
         $pdf = Pdf::loadView('pdf.sticker-batch', ['assets' => $assets]);
 
-        // 4. Set ukuran kertas (sama seperti single label: 50mm x 30mm)
         $customPaper = [0, 0, 141.73, 85.03];
         $pdf->setPaper($customPaper, 'portrait');
 
@@ -216,14 +196,12 @@ class AssetController extends Controller
 
         $oldStatus = $asset->status;
 
-        // --- UPDATE ASET UTAMA ---
         $asset->update([
             'status' => 'BORROWED',
-            'employee_id' => $request->employee_id, // <--- HAPUS KOMENTAR (UNCOMMENT)
+            'employee_id' => $request->employee_id,
         ]);
 
-        // --- CATAT HISTORY ---
-        \App\Models\AssetHistory::create([
+        AssetHistory::create([
             'asset_id' => $asset->id,
             'user_id' => auth()->id(),
             'employee_id' => $request->employee_id,
@@ -245,19 +223,17 @@ class AssetController extends Controller
         ]);
 
         $oldStatus = $asset->status;
-        $lastEmployeeId = $asset->employee_id; // Simpan dulu siapa peminjam terakhir
+        $lastEmployeeId = $asset->employee_id; 
 
-        // --- UPDATE ASET UTAMA ---
         $asset->update([
             'status' => 'AVAILABLE',
-            'employee_id' => null, // <--- HAPUS KOMENTAR (Set null karena kembali ke gudang)
+            'employee_id' => null, 
         ]);
 
-        // --- CATAT HISTORY ---
         \App\Models\AssetHistory::create([
             'asset_id' => $asset->id,
             'user_id' => auth()->id(),
-            'employee_id' => $lastEmployeeId, // Catat siapa yang mengembalikan
+            'employee_id' => $lastEmployeeId,
             'action' => 'return',
             'status_before' => $oldStatus,
             'status_after' => 'AVAILABLE',

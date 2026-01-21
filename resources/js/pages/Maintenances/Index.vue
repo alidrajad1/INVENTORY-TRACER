@@ -21,7 +21,7 @@ import { route } from 'ziggy-js';
 const breadcrumbs = [{ title: 'Maintenances Logs', href: route('maintenances.index') }];
 const props = defineProps<{
     maintenances: any;
-    assets: any[]; // List asset untuk dropdown
+    assets: any[];
     filters: { search: string };
 }>();
 
@@ -34,11 +34,10 @@ const form = useForm({
     asset_id: '',
     description: '',
     status: 'scheduled',
-    scheduled_at: new Date().toISOString().split('T')[0], // Default today
+    scheduled_at: new Date().toISOString().split('T')[0],
     completed_at: '',
 });
 
-// Search watcher
 watch(search, debounce((val: string) => {
     router.get(route('maintenaces.index'), { search: val }, { preserveState: true, replace: true });
 }, 300));
@@ -62,7 +61,6 @@ const openEdit = (item: any) => {
 };
 
 const handleSubmit = () => {
-    // Auto-fill completed_at jika status completed tapi tanggal kosong
     if(form.status === 'completed' && !form.completed_at) {
         form.completed_at = new Date().toISOString().split('T')[0];
     }

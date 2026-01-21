@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { route } from 'ziggy-js';
 
-// --- PROPS ---
 const props = defineProps<{
     assets: {
         data: any[], links: any[],
@@ -25,45 +24,35 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit', 'detail', 'delete', 'assign', 'return', 'page-change']);
 
-// --- LOGIC CHECKBOX (ANTI-GAGAL) ---
-// Kita simpan ID sebagai String agar konsisten (misal: "1", "2")
 const selectedIds = ref<string[]>([]);
 
-// Helper: Cek apakah ID ada di array (Handle String/Number mismatch)
 const isSelected = (id: any) => {
     return selectedIds.value.includes(String(id));
 };
 
-// 1. Computed: Apakah semua di halaman ini terpilih?
 const isAllSelected = computed(() => {
     if (props.assets.data.length === 0) return false;
-    // Cek apakah setiap aset di halaman ini ID-nya ada di selectedIds
     return props.assets.data.every(asset => isSelected(asset.id));
 });
 
-// 2. Action: Toggle Select All (Header)
 const toggleSelectAll = (e: Event) => {
     const isChecked = (e.target as HTMLInputElement).checked;
 
-    // Ambil semua ID di halaman ini, konversi ke String
     const pageIds = props.assets.data.map(a => String(a.id));
 
     if (isChecked) {
-        // Tambahkan ID yang belum ada
         pageIds.forEach(id => {
             if (!selectedIds.value.includes(id)) {
                 selectedIds.value.push(id);
             }
         });
     } else {
-        // Hapus ID yang ada di halaman ini
         selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id));
     }
 };
 
-// 3. Action: Toggle Single Row
 const toggleSelection = (rawId: any) => {
-    const id = String(rawId); // Paksa jadi String
+    const id = String(rawId);
     if (selectedIds.value.includes(id)) {
         selectedIds.value = selectedIds.value.filter(itemId => itemId !== id);
     } else {
@@ -71,12 +60,10 @@ const toggleSelection = (rawId: any) => {
     }
 };
 
-// 4. Reset jika pindah halaman
 watch(() => props.assets.data, () => {
     selectedIds.value = [];
 });
 
-// --- PRINT BATCH ---
 const printBatch = () => {
     if (selectedIds.value.length === 0) return;
 

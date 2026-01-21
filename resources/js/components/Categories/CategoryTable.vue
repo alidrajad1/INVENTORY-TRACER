@@ -13,7 +13,6 @@ import {
     DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 
-// --- PROPS ---
 const props = defineProps<{
     categories: {
         data: any[],
@@ -24,19 +23,15 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit', 'delete', 'page-change']);
 
-// --- LOGIC CHECKBOX (Sama persis dengan AssetTable) ---
 const selectedIds = ref<string[]>([]);
 
-// Helper: Konversi ke string agar aman
 const isSelected = (id: any) => selectedIds.value.includes(String(id));
 
-// 1. Computed: Checkbox Header
 const isAllSelected = computed(() => {
     if (props.categories.data.length === 0) return false;
     return props.categories.data.every(cat => isSelected(cat.id));
 });
 
-// 2. Action: Select All
 const toggleSelectAll = (e: Event) => {
     const isChecked = (e.target as HTMLInputElement).checked;
     const pageIds = props.categories.data.map(a => String(a.id));
@@ -50,7 +45,6 @@ const toggleSelectAll = (e: Event) => {
     }
 };
 
-// 3. Action: Single Select
 const toggleSelection = (rawId: any) => {
     const id = String(rawId);
     if (selectedIds.value.includes(id)) {
@@ -60,7 +54,6 @@ const toggleSelection = (rawId: any) => {
     }
 };
 
-// 4. Reset jika pindah halaman
 watch(() => props.categories.data, () => {
     selectedIds.value = [];
 });

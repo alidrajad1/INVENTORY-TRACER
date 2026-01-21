@@ -4,7 +4,6 @@ import { Head, router, useForm } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import { Search, Plus } from 'lucide-vue-next';
 
-// Layout & UI
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { route } from 'ziggy-js';
 
-// Component Table
 import LocationTable from '@/components/Locations/LocationTable.vue';
 
 const props = defineProps<{
@@ -24,7 +22,6 @@ const props = defineProps<{
 
 const breadcrumbs = [{ title: 'Locations', href: route('locations.index') }];
 
-// --- STATE ---
 const search = ref(props.filters.search || '');
 const isModalOpen = ref(false);
 const isEditMode = ref(false);
@@ -35,7 +32,6 @@ const form = useForm({
     building: ''
 });
 
-// --- LOGIC ---
 watch(search, debounce((val: string) => {
     router.get(route('locations.index'), { search: val }, { preserveState: true, replace: true });
 }, 300));

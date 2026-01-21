@@ -19,7 +19,7 @@ import UserTable from '@/components/Users/UserTable.vue';
 
 const props = defineProps<{
     users: any;
-    roles: Record<string, string>; // { 'admin': 'admin', 'user': 'user' }
+    roles: Record<string, string>;
     filters: { search: string };
 }>();
 
@@ -37,12 +37,9 @@ const form = useForm({
     role: '',
 });
 
-// Search Logic
 watch(search, debounce((val: string) => {
     router.get(route('users.index'), { search: val }, { preserveState: true, replace: true });
 }, 300));
-
-// --- ACTIONS ---
 
 const openCreate = () => {
     isEditMode.value = false;
@@ -57,9 +54,8 @@ const openEdit = (user: any) => {
 
     form.name = user.name;
     form.email = user.email;
-    form.password = ''; // Reset password field
+    form.password = '';
     form.password_confirmation = '';
-    // Ambil role pertama user (asumsi single role utama)
     form.role = user.roles.length > 0 ? user.roles[0].name : '';
 
     form.clearErrors();

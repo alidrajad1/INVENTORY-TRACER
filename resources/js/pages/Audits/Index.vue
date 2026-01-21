@@ -46,12 +46,11 @@ const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-// --- TAMBAHAN: Helper Warna Kondisi ---
 const getConditionColor = (condition: string) => {
     switch (condition) {
-        case 'GOOD': return 'default'; // Biasanya Hitam/Biru (Tergantung tema)
-        case 'BAD': return 'secondary'; // Abu-abu
-        case 'BROKEN': return 'destructive'; // Merah
+        case 'GOOD': return 'default'; 
+        case 'BAD': return 'secondary'; 
+        case 'BROKEN': return 'destructive'; 
         default: return 'outline';
     }
 };

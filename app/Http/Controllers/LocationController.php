@@ -19,7 +19,7 @@ class LocationController extends Controller
             });
         }
 
-        $locations = $query->withCount('assets') // Hitung jumlah aset di lokasi ini
+        $locations = $query->withCount('assets')
             ->orderBy('name', 'asc')
             ->paginate(10)
             ->withQueryString();

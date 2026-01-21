@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MobileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -10,7 +11,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\AuditController;
-use App\Http\Controllers\ScanController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -22,7 +23,14 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::resource('scan', MobileController::class);
+Route::get('/scan/{tag}', [MobileController::class, 'show'])->name('public.scan');
+Route::post('/scan/{tag}/checkin', [MobileController::class, 'checkin'])->name('public.checkin');
+Route::post('/scan/{tag}/report', [MobileController::class, 'report'])->name('public.report');
+
 Route::middleware(['auth', 'verified'])->group(function () {
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::post('/assets/{asset}/return', [AssetController::class, 'returnAsset'])->name('assets.return');
     Route::post('/assets/{asset}/assign', [AssetController::class, 'assign'])->name('assets.assign');
@@ -45,12 +53,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('audits', [AuditController::class, 'index'])->name('audits.index');
     Route::post('audits', [AuditController::class, 'store'])->name('audits.store');
     Route::resource('audits', AuditController::class);
-
-
-    Route::get('/scan', [ScanController::class, 'index'])->name('scan.index');
-    Route::get('/scan/{asset_tag}', [ScanController::class, 'show'])->name('scan.result');
-    Route::post('/scan/transaction', [ScanController::class, 'store'])->name('scan.transaction');
-
 });
 
 require __DIR__ . '/settings.php';

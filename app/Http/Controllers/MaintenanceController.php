@@ -11,7 +11,7 @@ class MaintenanceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Maintenance::query()->with('asset'); // Eager load asset
+        $query = Maintenance::query()->with('asset');
 
         if ($request->search) {
             $query->where('description', 'like', '%' . $request->search . '%')
@@ -21,7 +21,6 @@ class MaintenanceController extends Controller
                   });
         }
 
-        // Filter Status (Optional)
         if ($request->status) {
             $query->where('status', $request->status);
         }
@@ -30,7 +29,6 @@ class MaintenanceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        // Ambil list asset untuk dropdown di modal
         $assets = Asset::select('id', 'name', 'asset_tag')->orderBy('name')->get();
 
         return Inertia::render('Maintenances/Index', [
