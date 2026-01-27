@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, Laptop, Layers, LayoutGrid, MapPin, User, Users, Wrench } from 'lucide-vue-next';
+import { BookOpen, Folder, Laptop, Layers, LayoutGrid, MapPin, User, Users, Wrench, Clock, Inbox } from 'lucide-vue-next';
 
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -57,6 +57,11 @@ const navGroups: NavGroup[] = [
                 href: route('locations.index'),
                 icon: MapPin
             },
+            {
+                title: 'Loan Requests',
+                href: route('loan-requests.index'),
+                icon: Inbox
+            },
         ]
     },
     {
@@ -86,6 +91,11 @@ const navGroups: NavGroup[] = [
                 title: 'Audit Assets',
                 href: route('audits.index'),
                 icon: BookOpen,
+            },
+            {
+                title: 'Activity Logs',
+                href: '/logs',
+                icon: Clock,
             },
         ]
     }

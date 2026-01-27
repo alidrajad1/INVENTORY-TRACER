@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { ArrowDownLeftFromCircle, AlertTriangle } from 'lucide-vue-next';
 import { 
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle 
 } from '@/components/ui/dialog';
@@ -11,6 +10,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from '@/components/ui/select';
 import { route } from 'ziggy-js';
+import { watch } from 'vue';
 
 const props = defineProps<{
     show: boolean;
@@ -20,13 +20,21 @@ const props = defineProps<{
 const emit = defineEmits(['close']);
 
 const form = useForm({
-    condition: 'GOOD',
+    condition: 'GOOD', // Default condition
     notes: '',
 });
 
-const handleSubmit = () => {
-    if (!props.asset) return;
+// Reset form when modal opens with a new asset
+watch(() => props.asset, () => {
+    form.reset();
+    form.clearErrors();
+    // If asset has a previous condition, it can be set here if desired
+    // form.condition = props.asset?.condition || 'GOOD';
+});
 
+const submit = () => {
+    if (!props.asset) return;
+    
     form.post(route('assets.return', props.asset.id), {
         onSuccess: () => {
             form.reset();
@@ -40,52 +48,54 @@ const handleSubmit = () => {
     <Dialog :open="show" @update:open="(val) => !val && emit('close')">
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle class="flex items-center gap-2 text-orange-600">
-                    <ArrowDownLeftFromCircle class="w-5 h-5" /> Return Asset (Check-In)
-                </DialogTitle>
+                <DialogTitle>Return Asset</DialogTitle>
                 <DialogDescription>
-                    Proses pengembalian aset ke gudang (Available).
+                    Please verify the physical condition of the item before accepting the return.
                 </DialogDescription>
             </DialogHeader>
-            
-            <form @submit.prevent="handleSubmit" class="grid gap-4 py-4" v-if="asset">
-                
-                <div class="bg-orange-50 p-3 rounded-md border border-orange-100 space-y-1 text-sm">
-                    <div class="flex justify-between">
-                        <span class="font-bold text-orange-900">{{ asset.name }}</span>
-                        <span class="font-mono text-xs text-orange-800">{{ asset.asset_tag }}</span>
-                    </div>
-                    <div class="text-xs text-orange-700">
-                        Dipinjam oleh: <b>{{ asset.employee?.name || 'Unknown' }}</b>
-                    </div>
+
+            <div class="grid gap-4 py-4">
+                <div v-if="asset" class="p-3 bg-muted/50 rounded-md text-sm mb-2">
+                    <p class="font-medium">{{ asset.name }}</p>
+                    <p class="text-xs text-muted-foreground">{{ asset.asset_tag }}</p>
+                    <p class="text-xs mt-1">Borrower: <span class="font-semibold">{{ asset.employee?.name }}</span></p>
                 </div>
 
                 <div class="grid gap-2">
-                    <Label>Condition upon Return</Label>
+                    <Label>Condition on Return</Label>
                     <Select v-model="form.condition">
                         <SelectTrigger>
                             <SelectValue placeholder="Select Condition" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="GOOD">Good (Baik & Lengkap)</SelectItem>
-                            <SelectItem value="BAD">Bad (Lecet/Kotor/Tidak Lengkap)</SelectItem>
-                            <SelectItem value="BROKEN">Broken (Rusak - Perlu Servis)</SelectItem>
+                            <SelectItem value="GOOD">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-green-500"></span> Good
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="BAD">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-yellow-500"></span> Bad / Poor
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="BROKEN">
+                                <span class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Broken
+                                </span>
+                            </SelectItem>
                         </SelectContent>
                     </Select>
-                    <p class="text-[10px] text-muted-foreground" v-if="form.condition === 'BROKEN'">
-                        * Aset akan ditandai rusak di history, tapi status tetap Available. Anda perlu mengirimnya ke Maintenance terpisah jika ingin diperbaiki.
-                    </p>
                 </div>
 
                 <div class="grid gap-2">
-                    <Label>Notes</Label>
-                    <Textarea v-model="form.notes" placeholder="e.g. Kabel charger hilang, ada goresan di layar..." />
+                    <Label>Notes / Comments</Label>
+                    <Textarea v-model="form.notes" placeholder="Example: Minor scratches on screen, charger missing..." />
                 </div>
-            </form>
+            </div>
 
             <DialogFooter>
                 <Button variant="outline" @click="emit('close')">Cancel</Button>
-                <Button @click="handleSubmit" :disabled="form.processing" class="bg-orange-600 hover:bg-orange-700 text-white">
+                <Button @click="submit" :disabled="form.processing">
                     Confirm Return
                 </Button>
             </DialogFooter>

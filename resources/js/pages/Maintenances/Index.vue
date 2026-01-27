@@ -1,179 +1,124 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { debounce } from 'lodash';
-import { Search, Plus, Wrench } from 'lucide-vue-next';
-
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-    Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
-} from '@/components/ui/dialog';
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '@/components/ui/select';
-import MaintenanceTable from '@/components/Maintenances/MaintenanceTable.vue';
+import { ref } from 'vue';
+import { Head, router } from '@inertiajs/vue3';
 import { route } from 'ziggy-js';
+import AppLayout from '@/layouts/AppLayout.vue';
+import MaintenanceTable from '@/components/Maintenances/MaintenanceTable.vue';
+import MaintenanceModal from '@/components/Maintenances/MaintenanceModal.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Search, Download } from 'lucide-vue-next'; // Added Download import
 
-const breadcrumbs = [{ title: 'Maintenances Logs', href: route('maintenances.index') }];
+// Props passed from MaintenanceController::index
 const props = defineProps<{
     maintenances: any;
     assets: any[];
-    filters: { search: string };
+    filters: any;
 }>();
 
+// --- STATE ---
+const showModal = ref(false);
+const modalMode = ref<'create' | 'edit'>('create');
+const selectedItem = ref(null);
 const search = ref(props.filters.search || '');
-const isModalOpen = ref(false);
-const isEditMode = ref(false);
-const editingItem = ref<any>(null);
+const statusFilter = ref(props.filters.status || '');
 
-const form = useForm({
-    asset_id: '',
-    description: '',
-    status: 'scheduled',
-    scheduled_at: new Date().toISOString().split('T')[0],
-    completed_at: '',
-});
+// --- ACTIONS ---
 
-watch(search, debounce((val: string) => {
-    router.get(route('maintenaces.index'), { search: val }, { preserveState: true, replace: true });
-}, 300));
-
+// Open Create Modal
 const openCreate = () => {
-    isEditMode.value = false;
-    form.reset();
-    form.clearErrors();
-    isModalOpen.value = true;
+    modalMode.value = 'create';
+    selectedItem.value = null;
+    showModal.value = true;
 };
 
+// Open Edit Modal (Receives item from table emit)
 const openEdit = (item: any) => {
-    isEditMode.value = true;
-    editingItem.value = item;
-    form.asset_id = item.asset_id.toString();
-    form.description = item.description;
-    form.status = item.status;
-    form.scheduled_at = item.scheduled_at;
-    form.completed_at = item.completed_at || '';
-    isModalOpen.value = true;
+    modalMode.value = 'edit';
+    selectedItem.value = item;
+    showModal.value = true;
 };
 
-const handleSubmit = () => {
-    if(form.status === 'completed' && !form.completed_at) {
-        form.completed_at = new Date().toISOString().split('T')[0];
-    }
-
-    if (isEditMode.value) {
-        form.put(route('maintenances.update', editingItem.value.id), { onSuccess: () => isModalOpen.value = false });
-    } else {
-        form.post(route('maintenances.store'), { onSuccess: () => isModalOpen.value = false });
+// Delete Item
+const deleteItem = (item: any) => {
+    if (confirm('Are you sure you want to delete this maintenance record?')) {
+        router.delete(route('maintenances.destroy', item.id));
     }
 };
 
-const handleDelete = (item: any) => {
-    if (confirm('Delete this maintenance record?')) {
-        router.delete(route('maintenance.destroy'));
-    }
+// Search & Filter
+const handleSearch = () => {
+    router.get(route('maintenances.index'), {
+        search: search.value,
+        status: statusFilter.value
+    }, {
+        preserveState: true,
+        replace: true
+    });
+};
+
+// Pagination
+const handlePageChange = (url: string) => {
+    router.get(url, {
+        search: search.value,
+        status: statusFilter.value
+    }, { preserveState: true });
+};
+
+const exportExcel = () => {
+    // Get filter parameters from current URL
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = route('maintenances.export') + '?' + params.toString();
 };
 </script>
 
 <template>
-    <Head title="Maintenance" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-            <div class="flex items-center justify-between bg-card p-6 rounded-xl border">
+    <Head title="Maintenance Logs" />
+
+    <AppLayout>
+        <div class="p-6 space-y-6">
+
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold tracking-tight">Maintenance Schedule</h2>
-                    <p class="text-muted-foreground">Track repairs, upgrades, and routine checks.</p>
+                    <h2 class="text-2xl font-bold tracking-tight">Maintenance Logs</h2>
+                    <p class="text-muted-foreground text-sm">Manage asset repair and maintenance schedules.</p>
                 </div>
-                <div class="bg-primary/10 p-3 rounded-full">
-                    <Wrench class="w-6 h-6 text-primary" />
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <div class="relative w-72">
-                    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input v-model="search" placeholder="Search description or asset..." class="pl-8" />
-                </div>
-                <Button @click="openCreate">
-                    <Plus class="mr-2 h-4 w-4" /> Schedule Maintenance
-                </Button>
-            </div>
-
-            <MaintenanceTable 
-                :maintenances="maintenances"
-                @edit="openEdit"
-                @delete="handleDelete"
-                @page-change="(url) => router.get(url)"
-            />
-        </div>
-
-        <Dialog :open="isModalOpen" @update:open="(val) => isModalOpen = val">
-            <DialogContent class="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>{{ isEditMode ? 'Update Maintenance' : 'Schedule New Maintenance' }}</DialogTitle>
-                    <DialogDescription>Fill in the details below.</DialogDescription>
-                </DialogHeader>
-
-                <form @submit.prevent="handleSubmit" class="grid gap-4 py-4">
-                    <div class="grid gap-2">
-                        <Label>Select Asset</Label>
-                        <Select v-model="form.asset_id">
-                            <SelectTrigger>
-                                <SelectValue placeholder="Choose an asset" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem v-for="asset in assets" :key="asset.id" :value="asset.id.toString()">
-                                    {{ asset.name }} ({{ asset.asset_tag }})
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <span v-if="form.errors.asset_id" class="text-xs text-red-500">{{ form.errors.asset_id }}</span>
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label>Description / Issue</Label>
-                        <Textarea v-model="form.description" placeholder="e.g. Monthly cleaning, Fan replacement..." />
-                        <span v-if="form.errors.description" class="text-xs text-red-500">{{ form.errors.description }}</span>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="grid gap-2">
-                            <Label>Scheduled Date</Label>
-                            <Input type="date" v-model="form.scheduled_at" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Status</Label>
-                            <Select v-model="form.status">
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="in_progress">In Progress</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="canceled">Canceled</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div class="grid gap-2" v-if="form.status === 'completed'">
-                        <Label>Completion Date</Label>
-                        <Input type="date" v-model="form.completed_at" />
-                    </div>
-
-                </form>
-
-                <DialogFooter>
-                    <Button variant="outline" @click="isModalOpen = false">Cancel</Button>
-                    <Button @click="handleSubmit" :disabled="form.processing">
-                        {{ isEditMode ? 'Save Changes' : 'Create Schedule' }}
+                
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <Button variant="outline" @click="exportExcel" class="w-full sm:w-auto">
+                        <Download class="w-4 h-4 mr-2" />
+                        Export Excel
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+
+                    <Button @click="openCreate" class="w-full sm:w-auto">
+                        <Plus class="w-4 h-4 mr-2" />
+                        Add Schedule
+                    </Button>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center bg-card p-4 rounded-lg border">
+                <div class="relative w-full sm:w-72">
+                    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input v-model="search" placeholder="Search asset or description..." class="pl-9"
+                        @keyup.enter="handleSearch" />
+                </div>
+
+                <select v-model="statusFilter" @change="handleSearch"
+                    class="h-10 w-full sm:w-48 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <option value="">All Statuses</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+
+            <MaintenanceTable :maintenances="maintenances" @edit="openEdit" @delete="deleteItem"
+                @page-change="handlePageChange" />
+
+            <MaintenanceModal :show="showModal" :mode="modalMode" :assets="assets" :maintenance="selectedItem"
+                @close="showModal = false" />
+        </div>
     </AppLayout>
 </template>

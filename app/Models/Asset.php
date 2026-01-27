@@ -13,61 +13,81 @@ class Asset extends Model
     use HasFactory;
 
     protected $fillable = [
-    'name',
-    'asset_tag',
-    'serial_number',
-    'brand',
-    'model',
-    'category_id',
-    'location_id',
-    'image',
-    'hardware_specs',
-    'status', 
-    'employee_id',  
-    'last_audit_date'
-];
+        'asset_tag',
+        'serial_number',
+
+        'name',
+        'brand',
+        'model',
+        'hardware_specs',
+        'purchase_year',
+        'period',
+        'vendor',
+
+        'category_id',
+        'location_id',
+        'employee_id',
+
+        'status',
+        'loan_type',
+        'last_audit_date',
+        'due_date',
+        'condition',
+    ];
 
     protected $casts = [
-        'purchase_date' => 'date',
+        'purchase_date' => 'integer',
+        'period' => 'integer',
+        'due_date' => 'date',
+        'last_audit_date' => 'datetime',
         'last_seen_at' => 'datetime',
         'hardware_specs' => 'array'
     ];
+
+    protected $appends = [
+        'expiry_year',
+        'is_assets_active',
+    ];
+
+    public function getExpiryYearAttribute()
+    {
+        if (!$this->purchase_year || !$this->period) {
+            return null;
+        }
+        return $this->purchase_year + $this->period;
+    }
+
+    public function getIsAssetsActiveAttribute()
+    {
+        if (!$this->expiry_year)
+            return false;
+        return date('Y') <= $this->expiry_year;
+    }
 
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($model) {
-            // Cek apakah asset_tag kosong? Jika ya, kita buatkan.
             if (empty($model->asset_tag)) {
-                
-                // 1. Tentukan Tahun saat ini
-                $year = date('Y'); // Contoh: 2024
-                
-                // 2. Tentukan Format Prefix
-                // Format: AST-2024-
+
+                $year = date('Y');
+
                 $prefix = 'AST-' . $year . '-';
-                
-                // 3. Cari aset terakhir yang punya prefix SAMA (tahun yang sama)
+
                 $latestAsset = self::where('asset_tag', 'like', $prefix . '%')
-                                   ->orderBy('id', 'desc')
-                                   ->first();
+                    ->orderBy('id', 'desc')
+                    ->first();
 
                 if (!$latestAsset) {
-                    // Jika belum ada aset di tahun ini, mulai dari 1
                     $number = 1;
                 } else {
-                    // Jika sudah ada, kita ambil nomor urutnya
-                    // Contoh: AST-2024-00005. Kita buang prefix "AST-2024-", sisa "00005"
-                    // Lalu ubah jadi integer: 5
+
                     $lastNumber = (int) substr($latestAsset->asset_tag, strlen($prefix));
-                    
-                    // Tambah 1
+
                     $number = $lastNumber + 1;
                 }
 
-                // 4. Gabungkan Format Akhir
-                // str_pad berguna untuk menambah nol di depan (00001)
                 $model->asset_tag = $prefix . str_pad($number, 5, '0', STR_PAD_LEFT);
             }
         });
@@ -88,13 +108,6 @@ class Asset extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    public function software(): BelongsToMany
-    {
-        return $this->belongsToMany(Software::class, 'asset_software')
-                    ->withPivot('version', 'installed_at')
-                    ->withTimestamps();
-    }
-
     public function histories(): HasMany
     {
         return $this->hasMany(AssetHistory::class);
@@ -103,5 +116,10 @@ class Asset extends Model
     public function maintenance(): HasMany
     {
         return $this->hasMany(Maintenance::class);
+    }
+
+    public function loanRequest(): HasMany
+    {
+        return $this->hasMany(LoanRequest::class);
     }
 }

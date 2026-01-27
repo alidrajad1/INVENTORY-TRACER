@@ -32,7 +32,7 @@ class SyncGlpiApi extends Command
         $glpiComputers = GlpiComputer::with([
             'manufacturer',
             'model',
-            'cpuItems',
+            'cpuItems.deviceProcessor',
             'memoryItems',
             'diskItems',
             'osItems.operatingSystem'
@@ -118,7 +118,7 @@ class SyncGlpiApi extends Command
         // 2. CPU: Get the designation from the first processor item
         $cpuStr = 'Unknown Processor';
         if ($firstCpu = $comp->cpuItems->first()) {
-            $cpuStr = $firstCpu->designation ?? 'Unknown CPU';
+            $cpuStr = $firstCpu->deviceProcessor->designation ?? 'Unknown CPU';
             if ($firstCpu->frequency > 0) {
                 $cpuStr .= ' @ ' . $firstCpu->frequency . ' Mhz';
             }

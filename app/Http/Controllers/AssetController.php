@@ -11,6 +11,8 @@ use App\Services\GlpiService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\AssetsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AssetController extends Controller
 {
@@ -24,7 +26,7 @@ class AssetController extends Controller
                 'histories' => function ($query) {
                     $query->latest()->limit(5);
                 },
-                'histories.user', 
+                'histories.user',
                 'histories.employee'
             ])
             ->when($request->search, function ($query, $search) {
@@ -65,6 +67,7 @@ class AssetController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Update Validasi: Tambahkan Vendor, Period (Garansi), & Purchase Year
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -73,10 +76,17 @@ class AssetController extends Controller
             'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
-            'hardware_specs' => 'nullable|array', 
+            'hardware_specs' => 'nullable|array',
+
+            // --- FIELD BARU (Aging & Vendor) ---
+            'purchase_year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
+            'period' => 'nullable|integer|min:0|max:50', // Periode Garansi
+            'vendor' => 'nullable|string|max:255',
         ]);
 
-        $validated['status'] = 'AVAILABLE';
+        if (empty($validated['status'])) {
+            $validated['status'] = 'AVAILABLE';
+        }
 
         Asset::create($validated);
 
@@ -88,10 +98,12 @@ class AssetController extends Controller
         $asset->load([
             'category',
             'location',
+            'employee',
             'histories.user',
             'histories.employee',
             'histories.location',
-            'maintenances'
+            'maintenance', // Pastikan relasi di model namanya 'maintenance' (hasMany)
+            'loanRequest'  // Load request jika perlu
         ]);
 
         return Inertia::render('Assets/Show', [
@@ -111,6 +123,7 @@ class AssetController extends Controller
 
     public function update(Request $request, Asset $asset)
     {
+        // 2. Update Validasi Edit
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -119,6 +132,11 @@ class AssetController extends Controller
             'model' => 'nullable|string',
             'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
             'hardware_specs' => 'nullable|array',
+
+            // --- FIELD BARU ---
+            'purchase_year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
+            'period' => 'nullable|integer|min:0|max:50',
+            'vendor' => 'nullable|string|max:255',
         ]);
 
         $asset->update($validated);
@@ -131,6 +149,85 @@ class AssetController extends Controller
         $asset->delete();
         return redirect()->route('assets.index')->with('success', 'Aset berhasil dihapus.');
     }
+
+    // --- FITUR SMART LOAN (PEMINJAMAN) ---
+    public function assign(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'notes' => 'nullable|string',
+
+            // Validasi Tipe Peminjaman
+            'loan_type' => 'required|in:LONG_TERM,SHORT_TERM',
+            'due_date' => 'required_if:loan_type,SHORT_TERM|nullable|date|after:today',
+        ]);
+
+        $oldStatus = $asset->status;
+
+        // Update Aset dengan Data Peminjaman
+        $asset->update([
+            'status' => 'BORROWED',
+            'employee_id' => $request->employee_id,
+            'loan_type' => $request->loan_type,
+            // Jika SHORT_TERM, simpan tanggal. Jika LONG_TERM, null-kan.
+            'due_date' => $request->loan_type === 'SHORT_TERM' ? $request->due_date : null,
+        ]);
+
+        // Catat History
+        AssetHistory::create([
+            'asset_id' => $asset->id,
+            'user_id' => auth()->id(),
+            'employee_id' => $request->employee_id,
+            'action' => 'assign',
+            'status_before' => $oldStatus,
+            'status_after' => 'BORROWED',
+            'condition' => 'GOOD',
+            'location_id' => $request->location_id ?? $asset->location_id,
+            // Tambahkan info tipe pinjam ke notes history
+            'notes' => $request->notes . " [Tipe: " . $request->loan_type .
+                ($request->loan_type === 'SHORT_TERM' ? ", Due: " . $request->due_date : "") . "]",
+        ]);
+
+        return back()->with('success', 'Aset berhasil dipinjamkan (' . $request->loan_type . ').');
+    }
+
+    public function returnAsset(Request $request, Asset $asset)
+    {
+        $request->validate([
+            'condition' => 'required|in:GOOD,BAD,BROKEN', // Validasi input
+            'notes' => 'nullable|string',
+        ]);
+
+        $oldStatus = $asset->status;
+        $lastEmployeeId = $asset->employee_id;
+
+        // 1. Update Aset Utama (Status & Kondisi Terkini)
+        $asset->update([
+            'status' => 'AVAILABLE',
+            'condition' => $request->condition, // <--- Simpan kondisi terkini
+            'employee_id' => null,
+            'loan_type' => null,
+            'due_date' => null,
+        ]);
+
+        // 2. Simpan ke History (Rekam jejak kondisi saat dikembalikan)
+        AssetHistory::create([
+            'asset_id' => $asset->id,
+            'user_id' => auth()->id(),
+            'employee_id' => $lastEmployeeId,
+            'action' => 'return',
+            'status_before' => $oldStatus,
+            'status_after' => 'AVAILABLE',
+            'condition' => $request->condition, // <--- Masuk ke kolom yang Anda buat
+            'notes' => $request->notes,
+            'location_id' => $asset->location_id,
+        ]);
+
+        return back()->with('success', 'Aset telah dikembalikan. Kondisi: ' . $request->condition);
+    }
+
+    // --- GLPI & Printing Methods ---
 
     public function syncGlpi(Request $request, GlpiService $glpiService)
     {
@@ -159,12 +256,11 @@ class AssetController extends Controller
             return back()->withErrors(['api' => 'Gagal terhubung ke GLPI: ' . $e->getMessage()]);
         }
     }
+
     public function printLabel(Asset $asset)
     {
         $pdf = Pdf::loadView('pdf.sticker', ['asset' => $asset]);
-
         $pdf->setPaper([0, 0, 141.7, 85.0], 'portrait');
-
         return $pdf->stream('sticker-' . $asset->asset_tag . '.pdf');
     }
 
@@ -177,72 +273,18 @@ class AssetController extends Controller
         }
 
         $assets = Asset::whereIn('id', $ids)->get();
-
         $pdf = Pdf::loadView('pdf.sticker-batch', ['assets' => $assets]);
-
         $customPaper = [0, 0, 141.73, 85.03];
         $pdf->setPaper($customPaper, 'portrait');
 
         return $pdf->stream('batch-stickers.pdf');
     }
 
-    public function assign(Request $request, Asset $asset)
+    public function export(Request $request)
     {
-        $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'notes' => 'nullable|string',
-            'location_id' => 'nullable|exists:locations,id',
-        ]);
+        // Nama file: assets-TANGGAL-JAM.xlsx
+        $fileName = 'assets-' . date('Y-m-d-His') . '.xlsx';
 
-        $oldStatus = $asset->status;
-
-        $asset->update([
-            'status' => 'BORROWED',
-            'employee_id' => $request->employee_id,
-        ]);
-
-        AssetHistory::create([
-            'asset_id' => $asset->id,
-            'user_id' => auth()->id(),
-            'employee_id' => $request->employee_id,
-            'action' => 'assign',
-            'status_before' => $oldStatus,
-            'status_after' => 'BORROWED',
-            'condition' => 'GOOD',
-            'location_id' => $request->location_id ?? $asset->location_id,
-            'notes' => $request->notes,
-        ]);
-
-        return back()->with('success', 'Aset berhasil dipinjamkan');
+        return Excel::download(new AssetsExport($request), $fileName);
     }
-    public function returnAsset(Request $request, Asset $asset)
-    {
-        $request->validate([
-            'condition' => 'required|in:GOOD,BAD,BROKEN',
-            'notes' => 'nullable|string',
-        ]);
-
-        $oldStatus = $asset->status;
-        $lastEmployeeId = $asset->employee_id; 
-
-        $asset->update([
-            'status' => 'AVAILABLE',
-            'employee_id' => null, 
-        ]);
-
-        \App\Models\AssetHistory::create([
-            'asset_id' => $asset->id,
-            'user_id' => auth()->id(),
-            'employee_id' => $lastEmployeeId,
-            'action' => 'return',
-            'status_before' => $oldStatus,
-            'status_after' => 'AVAILABLE',
-            'condition' => $request->condition,
-            'notes' => $request->notes,
-            'location_id' => $asset->location_id,
-        ]);
-
-        return back()->with('success', 'Aset telah dikembalikan');
-    }
-
 }

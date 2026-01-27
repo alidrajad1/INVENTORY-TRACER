@@ -25,4 +25,9 @@ class Employee extends Model
     {
         return $this->hasMany(AssetHistory::class);
     }
+
+    function loanRequests(): HasMany
+    {
+        return $this->hasMany(LoanRequest::class);
+    }
 }

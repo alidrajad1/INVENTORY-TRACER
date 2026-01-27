@@ -132,13 +132,13 @@ const getActionIcon = (action: string) => {
                                         <p class="text-sm font-medium leading-none capitalize text-foreground">
                                             {{ activity.action.replace('_', ' ') }}
                                         </p>
-                                        <span class="text-xs text-muted-foreground">{{ formatDate(activity.created_at) }}</span>
+                                        <span class="text-xs text-muted-foreground"> {{ formatDate(activity.created_at) }}</span>
                                     </div>
                                     <p class="text-sm text-muted-foreground">
-                                        <span class="font-semibold text-foreground/80">{{ activity.asset?.name }}</span>
+                                        <span class="font-semibold text-foreground/80"> {{ activity.asset?.name }}</span>
                                         <span v-if="activity.employee"> 
                                             {{ activity.action === 'assign' ? 'to' : 'from' }} 
-                                            <span class="text-primary font-medium">{{ activity.employee.name }}</span>
+                                            <span class="text-primary font-medium"> {{ activity.employee.name }}</span>
                                         </span>
                                     </p>
                                     <p v-if="activity.notes" class="text-xs text-muted-foreground italic">

@@ -6,6 +6,8 @@ use App\Models\Asset;
 use App\Models\Maintenance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MaintenancesExport;
 
 class MaintenanceController extends Controller
 {
@@ -15,10 +17,10 @@ class MaintenanceController extends Controller
 
         if ($request->search) {
             $query->where('description', 'like', '%' . $request->search . '%')
-                  ->orWhereHas('asset', function($q) use ($request) {
-                      $q->where('name', 'like', '%' . $request->search . '%')
+                ->orWhereHas('asset', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%')
                         ->orWhere('asset_tag', 'like', '%' . $request->search . '%');
-                  });
+                });
         }
 
         if ($request->status) {
@@ -54,24 +56,43 @@ class MaintenanceController extends Controller
         return redirect()->back()->with('success', 'Maintenance scheduled successfully.');
     }
 
-    public function update(Request $request, Maintenance $maintenance)
-    {
-        $request->validate([
-            'asset_id' => 'required|exists:assets,id',
-            'description' => 'required|string',
-            'scheduled_at' => 'required|date',
-            'status' => 'required|in:scheduled,in_progress,completed,canceled',
-            'completed_at' => 'nullable|date',
-        ]);
+public function update(Request $request, $id)
+{
+    // dd($request->all());
+    // Cari manual, agar pasti ketemu
+    $maintenance = Maintenance::findOrFail($id); 
 
-        $maintenance->update($request->all());
-
-        return redirect()->back()->with('success', 'Maintenance updated successfully.');
+    if ($request->status === 'completed' && empty($request->completed_at)) {
+        $request->merge(['completed_at' => now()]);
+    }
+    
+    if ($request->status !== 'completed') {
+        $request->merge(['completed_at' => null]);
     }
 
-    public function destroy(Maintenance $maintenance)
+    $validated = $request->validate([
+        'asset_id' => 'required|exists:assets,id',
+        'description' => 'required|string',
+        'scheduled_at' => 'required|date',
+        'status' => 'required|in:scheduled,in_progress,completed,canceled',
+        'completed_at' => 'nullable|date',
+    ]);
+
+    $maintenance->update($validated);
+
+    return redirect()->back()->with('success', 'Maintenance updated successfully.');
+}
+
+    public function destroy($id)
     {
+        $maintenance = Maintenance::findOrFail($id);
         $maintenance->delete();
         return redirect()->back()->with('success', 'Maintenance record deleted.');
+    }
+
+    public function export(Request $request)
+    {
+        $fileName = 'maintenance-report-' . date('Y-m-d') . '.xlsx';
+        return Excel::download(new MaintenancesExport($request), $fileName);
     }
 }
