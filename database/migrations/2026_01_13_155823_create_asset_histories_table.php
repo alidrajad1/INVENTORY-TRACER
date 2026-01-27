@@ -19,8 +19,8 @@ return new class extends Migration {
 
             $table->enum('action', ['assign', 'return', 'send_repair', 'finish_repair', 'audit', 'relocate']);
 
-            $table->enum('status_before', ['AVAILABLE', 'BORROWED', 'MAINTENANCE', 'LOST', 'DISPOSED'])->nullable();
-            $table->enum('status_after', ['AVAILABLE', 'BORROWED', 'MAINTENANCE', 'LOST', 'DISPOSED'])->nullable();
+            $table->enum('status_before', ['AVAILABLE', 'BORROWED', 'MAINTENANCE'])->nullable();
+            $table->enum('status_after', ['AVAILABLE', 'BORROWED', 'MAINTENANCE'])->nullable();
 
             $table->enum('condition', ['GOOD', 'BAD', 'BROKEN'])->default('GOOD');
 

@@ -18,7 +18,7 @@ class AssetController extends Controller
 {
     public function index(Request $request)
     {
-        $assets = Asset::query()
+        $query = Asset::query()
             ->with([
                 'category',
                 'location',
@@ -28,18 +28,37 @@ class AssetController extends Controller
                 },
                 'histories.user',
                 'histories.employee'
-            ])
-            ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('asset_tag', 'like', "%{$search}%")
-                    ->orWhere('serial_number', 'like', "%{$search}%");
-            })
-            ->when($request->status, function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->latest()
+            ]);
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                    ->orWhere('asset_tag', 'like', "%{$request->search}%")
+                    ->orWhere('serial_number', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->loan_type) {
+            $query->where('loan_type', $request->loan_type);
+        }
+
+        if ($request->year) {
+            $query->where('purchase_year', $request->year);
+        }
+
+        $assets = $query->latest()
             ->paginate(10)
             ->withQueryString();
+
+        $availableYears = Asset::select('purchase_year')
+            ->whereNotNull('purchase_year')
+            ->distinct()
+            ->orderBy('purchase_year', 'desc')
+            ->pluck('purchase_year');
 
         $stats = [
             'total' => Asset::count(),
@@ -49,8 +68,9 @@ class AssetController extends Controller
 
         return Inertia::render('Assets/Index', [
             'assets' => $assets,
-            'filters' => $request->only(['search', 'status']),
+            'filters' => $request->only(['search', 'status', 'loan_type', 'year']),
             'stats' => $stats,
+            'years' => $availableYears,
             'employees' => Employee::where('is_active', true)->orderBy('name')->get(),
             'categories' => Category::select('id', 'name')->orderBy('name')->get(),
             'locations' => Location::select('id', 'name')->orderBy('name')->get(),
@@ -67,20 +87,17 @@ class AssetController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Update Validasi: Tambahkan Vendor, Period (Garansi), & Purchase Year
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'location_id' => 'required|exists:locations,id',
             'serial_number' => 'nullable|string|unique:assets,serial_number',
-            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
+            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
             'hardware_specs' => 'nullable|array',
-
-            // --- FIELD BARU (Aging & Vendor) ---
             'purchase_year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
-            'period' => 'nullable|integer|min:0|max:50', // Periode Garansi
+            'period' => 'nullable|integer|min:0|max:50',
             'vendor' => 'nullable|string|max:255',
         ]);
 
@@ -102,8 +119,8 @@ class AssetController extends Controller
             'histories.user',
             'histories.employee',
             'histories.location',
-            'maintenance', // Pastikan relasi di model namanya 'maintenance' (hasMany)
-            'loanRequest'  // Load request jika perlu
+            'maintenance',
+            'loanRequests'
         ]);
 
         return Inertia::render('Assets/Show', [
@@ -123,17 +140,14 @@ class AssetController extends Controller
 
     public function update(Request $request, Asset $asset)
     {
-        // 2. Update Validasi Edit
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'location_id' => 'required|exists:locations,id',
             'brand' => 'nullable|string',
             'model' => 'nullable|string',
-            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE,LOST,DISPOSED',
+            'status' => 'nullable|in:AVAILABLE,BORROWED,MAINTENANCE',
             'hardware_specs' => 'nullable|array',
-
-            // --- FIELD BARU ---
             'purchase_year' => 'nullable|integer|min:2000|max:' . (date('Y') + 1),
             'period' => 'nullable|integer|min:0|max:50',
             'vendor' => 'nullable|string|max:255',
@@ -157,24 +171,19 @@ class AssetController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'location_id' => 'nullable|exists:locations,id',
             'notes' => 'nullable|string',
-
-            // Validasi Tipe Peminjaman
             'loan_type' => 'required|in:LONG_TERM,SHORT_TERM',
             'due_date' => 'required_if:loan_type,SHORT_TERM|nullable|date|after:today',
         ]);
 
         $oldStatus = $asset->status;
 
-        // Update Aset dengan Data Peminjaman
         $asset->update([
             'status' => 'BORROWED',
             'employee_id' => $request->employee_id,
             'loan_type' => $request->loan_type,
-            // Jika SHORT_TERM, simpan tanggal. Jika LONG_TERM, null-kan.
             'due_date' => $request->loan_type === 'SHORT_TERM' ? $request->due_date : null,
         ]);
 
-        // Catat History
         AssetHistory::create([
             'asset_id' => $asset->id,
             'user_id' => auth()->id(),
@@ -184,7 +193,6 @@ class AssetController extends Controller
             'status_after' => 'BORROWED',
             'condition' => 'GOOD',
             'location_id' => $request->location_id ?? $asset->location_id,
-            // Tambahkan info tipe pinjam ke notes history
             'notes' => $request->notes . " [Tipe: " . $request->loan_type .
                 ($request->loan_type === 'SHORT_TERM' ? ", Due: " . $request->due_date : "") . "]",
         ]);
@@ -195,23 +203,21 @@ class AssetController extends Controller
     public function returnAsset(Request $request, Asset $asset)
     {
         $request->validate([
-            'condition' => 'required|in:GOOD,BAD,BROKEN', // Validasi input
+            'condition' => 'required|in:GOOD,BAD,BROKEN',
             'notes' => 'nullable|string',
         ]);
 
         $oldStatus = $asset->status;
         $lastEmployeeId = $asset->employee_id;
 
-        // 1. Update Aset Utama (Status & Kondisi Terkini)
         $asset->update([
             'status' => 'AVAILABLE',
-            'condition' => $request->condition, // <--- Simpan kondisi terkini
+            'condition' => $request->condition,
             'employee_id' => null,
             'loan_type' => null,
             'due_date' => null,
         ]);
 
-        // 2. Simpan ke History (Rekam jejak kondisi saat dikembalikan)
         AssetHistory::create([
             'asset_id' => $asset->id,
             'user_id' => auth()->id(),
@@ -219,7 +225,7 @@ class AssetController extends Controller
             'action' => 'return',
             'status_before' => $oldStatus,
             'status_after' => 'AVAILABLE',
-            'condition' => $request->condition, // <--- Masuk ke kolom yang Anda buat
+            'condition' => $request->condition,
             'notes' => $request->notes,
             'location_id' => $asset->location_id,
         ]);
@@ -251,7 +257,6 @@ class AssetController extends Controller
                     ]
                 ]
             ]);
-
         } catch (\Exception $e) {
             return back()->withErrors(['api' => 'Gagal terhubung ke GLPI: ' . $e->getMessage()]);
         }
@@ -282,7 +287,6 @@ class AssetController extends Controller
 
     public function export(Request $request)
     {
-        // Nama file: assets-TANGGAL-JAM.xlsx
         $fileName = 'assets-' . date('Y-m-d-His') . '.xlsx';
 
         return Excel::download(new AssetsExport($request), $fileName);

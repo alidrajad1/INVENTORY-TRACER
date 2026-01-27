@@ -76,6 +76,10 @@ const getStatusVariant = (status: string) => {
     }
 };
 
+const getLoanTypeLabel = (type: string) => {
+    return type === 'SHORT_TERM' ? 'Short Term' : 'Long Term';
+};
+
 const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     // Changed locale to en-US
@@ -119,8 +123,7 @@ const isOverdue = (dateString: string) => {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <TableRow v-for="asset in assets.data" :key="asset.id" 
-                    :class="{ 'bg-muted/50': isSelected(asset.id) }"
+                <TableRow v-for="asset in assets.data" :key="asset.id" :class="{ 'bg-muted/50': isSelected(asset.id) }"
                     class="transition-colors hover:bg-muted/40">
 
                     <TableCell class="pl-4">
@@ -130,7 +133,8 @@ const isOverdue = (dateString: string) => {
                     </TableCell>
 
                     <TableCell>
-                        <div class="h-10 w-10 bg-white rounded-md border p-0.5 flex items-center justify-center overflow-hidden">
+                        <div
+                            class="h-10 w-10 bg-white rounded-md border p-0.5 flex items-center justify-center overflow-hidden">
                             <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${asset.asset_tag}`"
                                 class="w-full h-full object-contain" alt="QR" loading="lazy" />
                         </div>
@@ -161,7 +165,8 @@ const isOverdue = (dateString: string) => {
                             <template v-if="asset.is_assets_active">
                                 <ShieldCheck class="w-4 h-4 text-emerald-500" />
                                 <div class="flex flex-col">
-                                    <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Active</span>
+                                    <span
+                                        class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Active</span>
                                     <span class="text-[10px] text-muted-foreground">until {{ asset.expiry_year }}</span>
                                 </div>
                             </template>
@@ -181,13 +186,25 @@ const isOverdue = (dateString: string) => {
                     </TableCell>
 
                     <TableCell>
-                        <div class="flex flex-col gap-1 items-start">
+                        <div class="flex flex-col gap-1 items-start min-w-[140px]">
                             <Badge :variant="getStatusVariant(asset.status)">
                                 {{ asset.status }}
                             </Badge>
 
                             <div v-if="asset.status === 'BORROWED'"
-                                class="flex flex-col mt-1 bg-muted/40 p-2 rounded border border-border w-fit">
+                                class="flex flex-col mt-1 bg-muted/40 p-2 rounded border border-border w-fit max-w-full">
+
+                                <div class="mb-2">
+                                    <span :class="[
+                                        'text-[10px] px-1.5 py-0.5 rounded border font-medium',
+                                        asset.loan_type === 'SHORT_TERM'
+                                            ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800'
+                                            : 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+                                    ]">
+                                        {{ getLoanTypeLabel(asset.loan_type) }}
+                                    </span>
+                                </div>
+
                                 <div class="flex items-center gap-1.5 mb-1">
                                     <User class="w-3 h-3 text-muted-foreground" />
                                     <span class="text-xs font-medium truncate max-w-[120px] text-foreground">

@@ -28,7 +28,7 @@ return new class extends Migration
             $table->integer('period')->nullable();
             $table->string('vendor')->nullable();
             // Status
-            $table->enum('status',['AVAILABLE', 'BORROWED', 'MAINTENANCE', 'LOST', 'DISPOSED'])->default('AVAILABLE')->nullable();
+            $table->enum('status',['AVAILABLE', 'BORROWED', 'MAINTENANCE'])->default('AVAILABLE')->nullable();
             $table->enum('loan_type',['SHORT_TERM', 'LONG_TERM'])->nullable();
             $table->date('due_date')->nullable();
             // Monitoring fields

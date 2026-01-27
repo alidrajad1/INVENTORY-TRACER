@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\Maintenance;
+use App\Models\AssetHistory; 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\MaintenancesExport;
+use Illuminate\Support\Facades\DB; 
 
 class MaintenanceController extends Controller
 {
@@ -42,46 +44,90 @@ class MaintenanceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'asset_id' => 'required|exists:assets,id',
             'description' => 'required|string',
             'scheduled_at' => 'required|date',
             'status' => 'required|in:scheduled,in_progress,completed,canceled',
         ]);
 
-        $data = $request;
-        $data['user_id'] = auth()->id();
-        Maintenance::create($request->all());
+        DB::transaction(function () use ($validated, $request) {
+            $data = $validated;
+            $data['user_id'] = auth()->id();
+            Maintenance::create($data);
 
-        return redirect()->back()->with('success', 'Maintenance scheduled successfully.');
+            $asset = Asset::findOrFail($validated['asset_id']);
+            $oldStatus = $asset->status;
+
+            if ($oldStatus !== 'MAINTENANCE') {
+                $asset->update([
+                    'status' => 'MAINTENANCE',
+                    'employee_id' => null, 
+                    'loan_type' => null,
+                    'due_date' => null,
+                ]);
+
+                AssetHistory::create([
+                    'asset_id' => $asset->id,
+                    'user_id' => auth()->id(),
+                    'action' => 'send_repair',
+                    'status_before' => $oldStatus,
+                    'status_after' => 'MAINTENANCE',
+                    'condition' => $asset->condition,
+                    'location_id' => $asset->location_id,
+                    'notes' => 'Maintenance Scheduled: ' . $request->description,
+                ]);
+            }
+        });
+
+        return redirect()->back()->with('success', 'Maintenance scheduled & Asset set to MAINTENANCE.');
     }
 
-public function update(Request $request, $id)
-{
-    // dd($request->all());
-    // Cari manual, agar pasti ketemu
-    $maintenance = Maintenance::findOrFail($id); 
+    public function update(Request $request, $id)
+    {
+        $maintenance = Maintenance::findOrFail($id);
 
-    if ($request->status === 'completed' && empty($request->completed_at)) {
-        $request->merge(['completed_at' => now()]);
+        if ($request->status === 'completed' && empty($request->completed_at)) {
+            $request->merge(['completed_at' => now()]);
+        }
+        if ($request->status !== 'completed') {
+            $request->merge(['completed_at' => null]);
+        }
+
+        $validated = $request->validate([
+            'asset_id' => 'required|exists:assets,id',
+            'description' => 'required|string',
+            'scheduled_at' => 'required|date',
+            'status' => 'required|in:scheduled,in_progress,completed,canceled',
+            'completed_at' => 'nullable|date',
+        ]);
+
+        DB::transaction(function () use ($maintenance, $validated, $request) {
+
+            $maintenance->update($validated);
+
+            if (in_array($request->status, ['completed', 'canceled'])) {
+                $asset = Asset::findOrFail($maintenance->asset_id);
+
+                if ($asset->status === 'MAINTENANCE') {
+                    $asset->update(['status' => 'AVAILABLE']);
+
+                    AssetHistory::create([
+                        'asset_id' => $asset->id,
+                        'user_id' => auth()->id(),
+                        'action' => 'maintenance_finished',
+                        'status_before' => 'MAINTENANCE',
+                        'status_after' => 'AVAILABLE',
+                        'condition' => 'GOOD', 
+                        'location_id' => $asset->location_id,
+                        'notes' => 'Maintenance status: ' . $request->status,
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->back()->with('success', 'Maintenance updated successfully.');
     }
-    
-    if ($request->status !== 'completed') {
-        $request->merge(['completed_at' => null]);
-    }
-
-    $validated = $request->validate([
-        'asset_id' => 'required|exists:assets,id',
-        'description' => 'required|string',
-        'scheduled_at' => 'required|date',
-        'status' => 'required|in:scheduled,in_progress,completed,canceled',
-        'completed_at' => 'nullable|date',
-    ]);
-
-    $maintenance->update($validated);
-
-    return redirect()->back()->with('success', 'Maintenance updated successfully.');
-}
 
     public function destroy($id)
     {
