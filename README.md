@@ -47,8 +47,8 @@ Dibangun menggunakan **Laravel**, **Inertia.js**, dan **Vue 3** dengan antarmuka
 
 1.  **Clone Repository**
     ```bash
-    git clone [https://github.com/username/repo-name.git](https://github.com/username/repo-name.git)
-    cd repo-name
+    git clone https://github.com/alidrajad1/INVENTORY-TRACER.git
+    cd INVENTORY-TRACER
     ```
 
 2.  **Install Dependencies**
