@@ -32,12 +32,12 @@ Dibangun menggunakan **Laravel**, **Inertia.js**, dan **Vue 3** dengan antarmuka
 
 ## 🛠️ Teknologi yang Digunakan
 
-* **Backend:** [Laravel 10/11](https://laravel.com)
+* **Backend:** [Laravel 12](https://laravel.com)
 * **Frontend:** [Vue.js 3](https://vuejs.org) (Composition API)
 * **Adapter:** [Inertia.js](https://inertiajs.com)
 * **UI Components:** [Shadcn Vue](https://www.shadcn-vue.com) + [Tailwind CSS](https://tailwindcss.com)
 * **Database:** MySQL
-* **Packages Unggulan:**
+* **Packages:**
     * `spatie/laravel-activitylog` (Audit Trail)
     * `barryvdh/laravel-dompdf` (Cetak PDF)
     * `maatwebsite/excel` (Export Excel)
