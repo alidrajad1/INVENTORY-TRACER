@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Asset extends Model
 {
     use HasFactory;
+
+    use LogsActivity;
 
     protected $fillable = [
         'asset_tag',
@@ -121,5 +125,14 @@ class Asset extends Model
     public function loanRequest(): HasMany
     {
         return $this->hasMany(LoanRequest::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll() // Catat semua field
+            ->logOnlyDirty() // Hanya catat yang berubah saja
+            ->dontLogIfAttributesChangedOnly(['updated_at']) // Abaikan timestamp
+            ->useLogName('asset'); // Label log
     }
 }

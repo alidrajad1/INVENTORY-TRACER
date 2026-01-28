@@ -96,7 +96,7 @@ const submit = () => {
                         <SelectContent class="max-h-[300px]">
                             <SelectItem v-for="asset in assets" :key="asset.id" :value="String(asset.id)">
                                 <div class="py-1">
-                                    <span class="font-medium block">{{ asset.name }}</span>
+                                    <span class="font-medium block">{{ asset.name }} • </span>
                                     <span class="text-xs text-muted-foreground">{{ asset.asset_tag }} • {{ asset.brand }}</span>
                                 </div>
                             </SelectItem>
@@ -111,7 +111,7 @@ const submit = () => {
                     </Label>
                     <Input type="date" v-model="form.start_date" 
                         class="h-12 bg-slate-50 border-slate-200 text-base block w-full" 
-                        :min="new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]" required />
+                        :min="new Date(new Date().setDate(new Date().getDate())).toISOString().split('T')[0]" required />
                     <div v-if="form.errors.start_date" class="text-red-500 text-xs font-medium">{{ form.errors.start_date }}</div>
                 </div>
 

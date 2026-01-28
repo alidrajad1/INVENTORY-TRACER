@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Asset;
 use App\Models\Employee;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 
 class LoanRequest extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $fillable = [
         'asset_id',
@@ -36,5 +40,14 @@ class LoanRequest extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll() // Catat semua field
+            ->logOnlyDirty() // Hanya catat yang berubah saja
+            ->dontLogIfAttributesChangedOnly(['updated_at']) // Abaikan timestamp
+            ->useLogName('asset'); // Label log
     }
 }

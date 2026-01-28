@@ -16,6 +16,7 @@ use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MobileController;
 use App\Http\Controllers\PublicLoanController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // --- Audit ---
     // Resource sudah mencakup index dan store, route manual dihapus agar tidak duplikat
     Route::resource('audits', AuditController::class);
+
+    // --- Activity Logs ---
+    Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
 
     // --- Master Data (Admin) ---
     Route::resource('users', UserController::class);

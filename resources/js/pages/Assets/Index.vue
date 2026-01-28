@@ -208,7 +208,7 @@ const handleExport = () => {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    
+
                     <div class="space-y-1">
                         <Label class="text-xs">Search</Label>
                         <div class="relative">
@@ -264,10 +264,10 @@ const handleExport = () => {
                                 </SelectContent>
                             </Select>
 
-                            <Button 
+                            <Button
                                 v-if="params.search || params.status !== 'ALL' || params.loan_type !== 'ALL' || params.year !== 'ALL'"
-                                variant="ghost" size="icon" @click="resetFilters" 
-                                title="Reset Filters" class="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
+                                variant="ghost" size="icon" @click="resetFilters" title="Reset Filters"
+                                class="shrink-0 text-red-500 hover:text-red-700 hover:bg-red-50">
                                 <X class="w-4 h-4" />
                             </Button>
                         </div>
@@ -277,13 +277,10 @@ const handleExport = () => {
             </div>
 
             <div class="relative flex-1 rounded-xl border border-sidebar-border/70 bg-card overflow-hidden">
-                <AssetTable :assets="assets" 
-                    @detail="(asset) => { selectedAsset = asset; isDetailOpen = true; }"
-                    @edit="openEdit" 
-                    @delete="handleDelete" 
-                    @assign="openAssign" 
-                    @return="openReturn"
-                    @page-change="(url) => router.get(url, params, { preserveState: true })" />
+                <AssetTable :assets="assets"
+                    @page-change="(url) => router.get(url, {}, { preserveState: true, preserveScroll: true })"
+                    @edit="openEdit" @detail="(asset) => { selectedAsset = asset; isDetailOpen = true; }"
+                    @delete="handleDelete" @assign="openAssign" @return="openReturn" />
             </div>
         </div>
 

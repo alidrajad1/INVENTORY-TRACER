@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Asset;
 use App\Models\AssetHistory;
 use App\Models\Maintenance;
+use App\Models\LoanRequest; // <--- Jangan lupa import ini
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,6 +13,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
+
         $totalAssets = Asset::count();
         $borrowedAssets = Asset::where('status', 'BORROWED')->count();
         $maintenanceAssets = Asset::where('status', 'MAINTENANCE')->count();
@@ -22,15 +24,19 @@ class DashboardController extends Controller
               ->orWhere('last_audit_date', '<', now()->subMonths(3));
         })->count();
 
-        $pendingMaintenance = Maintenance::where('status', 'PENDING')->count();
+        $pendingMaintenance = Maintenance::where('status', 'scheduled')->count();
+
+        $pendingLoanRequests = LoanRequest::where('status', 'PENDING')->count();
 
         $recentActivities = AssetHistory::with(['asset', 'user', 'employee'])
             ->latest()
             ->limit(6)
             ->get();
 
-        $categories = \App\Models\Category::withCount('assets')
-            ->orderByDesc('assets_count')
+        $latestRequests = LoanRequest::with(['asset', 'employee'])
+            // Urutkan: PENDING paling atas, lalu berdasarkan tanggal terbaru
+            ->orderByRaw("FIELD(status, 'PENDING', 'APPROVED', 'REJECTED')")
+            ->latest()
             ->limit(5)
             ->get();
 
@@ -42,9 +48,10 @@ class DashboardController extends Controller
                 'available' => $availableAssets,
                 'audit_overdue' => $auditOverdue,
                 'maintenance_pending' => $pendingMaintenance,
+                'pending_requests' => $pendingLoanRequests, 
             ],
             'activities' => $recentActivities,
-            'top_categories' => $categories,
+            'latest_requests' => $latestRequests, 
         ]);
     }
 }

@@ -13,7 +13,6 @@ class LoanRequestController extends Controller
 {
     public function index()
     {
-        // Admin melihat semua request, diurutkan yang Pending paling atas
         $requests = LoanRequest::with(['employee', 'asset'])
             ->orderByRaw("FIELD(status, 'PENDING', 'APPROVED', 'REJECTED')")
             ->latest()
@@ -26,41 +25,35 @@ class LoanRequestController extends Controller
 
     public function approve(LoanRequest $loanRequest)
     {
-        // Cek apakah aset masih available (takutnya sudah di-assign manual ke orang lain)
         if ($loanRequest->asset->status !== 'AVAILABLE') {
             return back()->withErrors(['asset' => 'Aset ini sudah tidak tersedia (sedang dipinjam/rusak).']);
         }
 
         DB::transaction(function () use ($loanRequest) {
-            // 1. Update Status Request
             $loanRequest->update([
                 'status' => 'APPROVED',
-                'admin_id' => auth()->id(), // Siapa admin yang approve
+                'admin_id' => auth()->id(),
                 'reviewed_at' => now(),
             ]);
 
-            // 2. Update Aset (Otomatis menjadi BORROWED)
             $asset = $loanRequest->asset;
             $oldStatus = $asset->status;
             
             $asset->update([
                 'status' => 'BORROWED',
-                // Kita asumsikan user yang request terhubung ke data employee
-                // Jika user->employee_id ada, pakai itu. Jika tidak, null/error.
                 'employee_id' => $loanRequest->employee_id, 
-                'loan_type' => 'SHORT_TERM', // Request via web biasanya sementara
-                'due_date' => $loanRequest->return_date,
+                'loan_type' => 'SHORT_TERM',
+                'due_date' => $loanRequest->due_date,
             ]);
 
-            // 3. Catat History
             AssetHistory::create([
                 'asset_id' => $asset->id,
-                'user_id' => auth()->id(), // Admin yang menyetujui
+                'user_id' => auth()->id(),
                 'employee_id' => $loanRequest->employee_id,
-                'action' => 'assign', // Actionnya assign karena barang keluar
+                'action' => 'assign', 
                 'status_before' => $oldStatus,
                 'status_after' => 'BORROWED',
-                'condition' => $asset->condition, // Kondisi saat ini
+                'condition' => $asset->condition,
                 'notes' => 'Self-Request Approved. Alasan: ' . $loanRequest->reason,
             ]);
         });
@@ -84,8 +77,6 @@ class LoanRequestController extends Controller
 
     public function create()
     {
-        // Ambil hanya aset yang sedang AVAILABLE
-        // Kita select field secukupnya agar ringan
         $assets = Asset::where('status', 'AVAILABLE')
             ->select('id', 'name', 'asset_tag', 'model')
             ->orderBy('name')
@@ -100,27 +91,23 @@ class LoanRequestController extends Controller
     {
         $validated = $request->validate([
             'asset_id' => 'required|exists:assets,id',
-            'due_date' => 'required|date|after:today', // Minimal besok
+            'due_date' => 'required|date|after:today',
             'reason' => 'required|string|max:255',
         ]);
 
-        // Cek Double Booking (Validasi Race Condition)
-        // Pastikan aset masih AVAILABLE saat tombol diklik
         $asset = Asset::find($validated['asset_id']);
         if ($asset->status !== 'AVAILABLE') {
             return back()->withErrors(['asset_id' => 'Maaf, aset ini baru saja dipinjam orang lain.']);
         }
 
-        // Simpan Request (Status: PENDING)
         LoanRequest::create([
             'user_id' => auth()->id(),
             'asset_id' => $validated['asset_id'],
-            'due_date' => $validated['return_date'],
+            'due_date' => $validated['due_date'],
             'reason' => $validated['reason'],
             'status' => 'PENDING',
         ]);
 
-        // Redirect ke dashboard atau halaman list request user
         return redirect()->route('dashboard')->with('success', 'Permintaan berhasil dikirim. Menunggu persetujuan Admin.');
     }
 }

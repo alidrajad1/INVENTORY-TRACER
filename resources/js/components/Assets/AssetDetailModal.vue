@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const props = defineProps<{
     show: boolean;
@@ -19,10 +20,9 @@ const emit = defineEmits(['close', 'edit']);
 
 const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-        case 'AVAILABLE': return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
-        case 'BORROWED': return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
-        case 'MAINTENANCE': return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800';
-        case 'LOST': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+        case 'AVAILABLE': return 'default';
+        case 'MAINTENANCE': return 'destructive';
+        case 'BORROWED': return 'secondary';
         default: return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700';
     }
 };
@@ -38,8 +38,8 @@ const getActionColor = (action: string) => {
 
 const formatDate = (dateString: string) => {
     if (!dateString) return '-';
-    // Changed to en-US for English formatting
-    return new Date(dateString).toLocaleDateString('en-US', {
+    // Menggunakan format Indonesia agar lebih familiar (DD MMM YYYY)
+    return new Date(dateString).toLocaleDateString('id-ID', {
         day: 'numeric', month: 'short', year: 'numeric'
     });
 };
@@ -62,7 +62,7 @@ const warrantyInfo = computed(() => {
     <Dialog :open="show" @update:open="(val) => !val && emit('close')">
         <DialogContent class="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-                <DialogTitle>Asset Details</DialogTitle>
+                <DialogTitle>Detail Aset</DialogTitle>
             </DialogHeader>
 
             <div v-if="asset" class="grid gap-6 py-4">
@@ -87,18 +87,33 @@ const warrantyInfo = computed(() => {
                         </div>
 
                         <div v-if="asset.status === 'BORROWED'"
-                            class="mt-2 bg-blue-50 dark:bg-blue-900/20 p-2 rounded-md border border-blue-100 dark:border-blue-800 text-sm">
-                            <div class="flex items-center gap-2 mb-1">
-                                <User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                <span class="font-semibold text-blue-800 dark:text-blue-300">{{ asset.employee?.name ||
-                                    'Unknown User' }}</span>
+                            class="mt-3 p-3 rounded-lg border text-sm shadow-sm transition-colors" :class="asset.loan_type === 'SHORT_TERM'
+                                ? 'bg-orange-100 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800'
+                                : 'bg-blue-100 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'">
+
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b"
+                                :class="asset.loan_type === 'SHORT_TERM' ? 'border-orange-200 dark:border-orange-800' : 'border-blue-200 dark:border-blue-800'">
+                                <div class="p-1 rounded-full"
+                                    :class="asset.loan_type === 'SHORT_TERM' ? 'bg-orange-200 dark:bg-orange-800 text-orange-700 dark:text-orange-300' : 'bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300'">
+                                    <User class="w-3.5 h-3.5" />
+                                </div>
+                                <span class="font-bold text-base"
+                                    :class="asset.loan_type === 'SHORT_TERM' ? 'text-orange-900 dark:text-orange-100' : 'text-blue-900 dark:text-blue-100'">
+                                    {{ asset.employee?.name || 'Unknown User' }}
+                                </span>
                             </div>
-                            <div class="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
-                                <span class="uppercase font-bold tracking-wider">{{ asset.loan_type === 'SHORT_TERM' ?
-                                    'Short Term Loan' : 'Fixed Inventory' }}</span>
+
+                            <div class="flex items-center justify-between text-xs"
+                                :class="asset.loan_type === 'SHORT_TERM' ? 'text-orange-800 dark:text-orange-300' : 'text-blue-800 dark:text-blue-300'">
+
+                                <span
+                                    class="uppercase font-extrabold tracking-wider px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20">
+                                    {{ (asset.loan_type || 'Loan').replace('_', ' ') }}
+                                </span>
+
                                 <span v-if="asset.loan_type === 'SHORT_TERM' && asset.due_date"
-                                    class="flex items-center gap-1 ml-2">
-                                    <CalendarClock class="w-3 h-3" />
+                                    class="flex items-center gap-1.5 font-medium bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded">
+                                    <CalendarClock class="w-3.5 h-3.5" />
                                     Due: <strong>{{ formatDate(asset.due_date) }}</strong>
                                 </span>
                             </div>
@@ -173,7 +188,7 @@ const warrantyInfo = computed(() => {
                             <div>
                                 <span class="block text-[10px] text-muted-foreground">Processor</span>
                                 <span class="font-medium text-xs text-foreground">{{ asset.hardware_specs.cpu || '-'
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 bg-card border border-border p-2 rounded">
@@ -181,7 +196,7 @@ const warrantyInfo = computed(() => {
                             <div>
                                 <span class="block text-[10px] text-muted-foreground">RAM</span>
                                 <span class="font-medium text-xs text-foreground">{{ asset.hardware_specs.ram || '-'
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 bg-card border border-border p-2 rounded">
@@ -189,7 +204,7 @@ const warrantyInfo = computed(() => {
                             <div>
                                 <span class="block text-[10px] text-muted-foreground">Storage</span>
                                 <span class="font-medium text-xs text-foreground">{{ asset.hardware_specs.storage || '-'
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 bg-card border border-border p-2 rounded">
@@ -197,7 +212,7 @@ const warrantyInfo = computed(() => {
                             <div>
                                 <span class="block text-[10px] text-muted-foreground">OS</span>
                                 <span class="font-medium text-xs text-foreground">{{ asset.hardware_specs.os || '-'
-                                    }}</span>
+                                }}</span>
                             </div>
                         </div>
                     </div>
@@ -233,7 +248,7 @@ const warrantyInfo = computed(() => {
 
                             <div class="text-right shrink-0 ml-2 flex flex-col items-end gap-1">
                                 <span class="text-[10px] text-muted-foreground">{{ formatDate(history.created_at)
-                                    }}</span>
+                                }}</span>
 
                                 <span
                                     :class="['text-[10px] px-2 py-0.5 rounded border capitalize font-medium', getActionColor(history.action)]">

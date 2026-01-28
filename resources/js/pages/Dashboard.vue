@@ -3,17 +3,17 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { 
     Laptop, Users, Wrench, AlertTriangle, Activity, 
-    ArrowUpRight, ArrowDownLeft, Scan, ClipboardCheck, CheckCircle2 
+    ArrowUpRight, ArrowDownLeft, Wrench as WrenchIcon, ClipboardCheck, 
+    FileQuestion, CalendarClock 
 } from 'lucide-vue-next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { route } from 'ziggy-js';
 
 const props = defineProps<{
     stats: any;
     activities: any[];
-    top_categories: any[];
+    latest_requests: any[];
 }>();
 
 const formatDate = (date: string) => {
@@ -24,12 +24,19 @@ const formatDate = (date: string) => {
 
 const getActionIcon = (action: string) => {
     switch(action) {
-        // Gunakan bg-opacity/10 agar bagus di dark mode juga
         case 'assign': return { icon: ArrowUpRight, color: 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20' };
         case 'return': return { icon: ArrowDownLeft, color: 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/20' };
-        case 'maintenance': return { icon: Wrench, color: 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/20' };
+        case 'maintenance': return { icon: WrenchIcon, color: 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/20' };
         case 'audit': return { icon: ClipboardCheck, color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20' };
         default: return { icon: Activity, color: 'text-gray-500 bg-gray-100 dark:bg-gray-800' };
+    }
+};
+
+const getStatusVariant = (status: string) => {
+    switch(status) {
+        case 'APPROVED': return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400';
+        case 'REJECTED': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400';
+        default: return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400'; // Pending
     }
 };
 </script>
@@ -43,18 +50,12 @@ const getActionIcon = (action: string) => {
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                    <p class="text-muted-foreground">Assets Management Overiview.</p>
-                </div>
-                <div class="flex gap-2">
-                    <!-- <Link :href="route('scan.tool')">
-                        <Button class="shadow-md">
-                            <Scan class="mr-2 h-4 w-4" /> Scan QR
-                        </Button>
-                    </Link> -->
+                    <p class="text-muted-foreground">Assets Management Overview.</p>
                 </div>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle class="text-sm font-medium">Total Assets</CardTitle>
@@ -70,28 +71,41 @@ const getActionIcon = (action: string) => {
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">Deployed / Borrowed</CardTitle>
-                        <Users class="h-4 w-4 text-blue-500" />
+                        <CardTitle class="text-sm font-medium">Asset Requests</CardTitle>
+                        <FileQuestion class="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ stats.borrowed }}</div>
+                        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                            {{ stats.pending_requests }}
+                        </div>
                         <p class="text-xs text-muted-foreground">
-                            Assets currently with employees
+                            Pending Approvals
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle class="text-sm font-medium">In Maintenance</CardTitle>
+                        <CardTitle class="text-sm font-medium">Deployed</CardTitle>
+                        <Users class="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ stats.borrowed }}</div>
+                        <p class="text-xs text-muted-foreground">
+                            Assets in use
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle class="text-sm font-medium">Maintenance</CardTitle>
                         <Wrench class="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
                         <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ stats.maintenance }}</div>
                         <div class="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" class="text-[10px] border-red-200 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800">
-                                {{ stats.maintenance_pending }} Pending Approval
-                            </Badge>
+                            <span class="text-xs text-muted-foreground">Assets being repaired</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -104,15 +118,15 @@ const getActionIcon = (action: string) => {
                     <CardContent>
                         <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ stats.audit_overdue }}</div>
                         <p class="text-xs text-muted-foreground">
-                            Assets need physical verification
+                            Need verification
                         </p>
                     </CardContent>
                 </Card>
             </div>
 
-            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+            <div class="grid gap-6 md:grid-cols-2">
                 
-                <Card class="col-span-4">
+                <Card class="h-full">
                     <CardHeader>
                         <CardTitle>Recent Activity</CardTitle>
                     </CardHeader>
@@ -154,62 +168,46 @@ const getActionIcon = (action: string) => {
                     </CardContent>
                 </Card>
 
-                <div class="col-span-3 space-y-6">
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Top Categories</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div class="space-y-4">
-                                <div v-for="cat in top_categories" :key="cat.id" class="flex items-center">
-                                    <div class="w-full space-y-1">
-                                        <div class="flex justify-between text-sm">
-                                            <span class="font-medium">{{ cat.name }}</span>
-                                            <span class="text-muted-foreground">{{ cat.assets_count }} items</span>
-                                        </div>
-                                        <div class="h-2 w-full bg-secondary rounded-full overflow-hidden">
-                                            <div class="h-full bg-primary rounded-full" 
-                                                :style="{ width: Math.min((cat.assets_count / stats.total) * 100, 100) + '%' }">
-                                            </div>
-                                        </div>
+                <Card class="h-full">
+                    <CardHeader class="flex flex-row items-center justify-between">
+                        <CardTitle>Recent Loan Requests</CardTitle>
+                        <Link :href="route('loan-requests.index')" class="text-xs text-primary hover:underline">
+                            View All
+                        </Link>
+                    </CardHeader>
+                    <CardContent>
+                        <div class="space-y-4">
+                            <div v-for="req in latest_requests" :key="req.id" class="flex items-start justify-between border-b border-border last:border-0 pb-4 last:pb-0">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-sm font-medium">{{ req.user?.name || req.employee?.name }}</p>
+                                        <Badge class="text-[10px] px-1.5 h-5" :class="getStatusVariant(req.status)">
+                                            {{ req.status }}
+                                        </Badge>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground">
+                                        Requesting: <span class="font-semibold text-foreground">{{ req.asset?.name }}</span>
+                                    </p>
+                                    <div class="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                        <CalendarClock class="w-3 h-3" />
+                                        Return: {{ new Date(req.return_date).toLocaleDateString('id-ID') }}
                                     </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card class="bg-slate-900 text-slate-50 border-0 dark:bg-slate-800">
-                        <CardHeader>
-                            <CardTitle class="text-slate-50">Actions Needed</CardTitle>
-                        </CardHeader>
-                        <CardContent class="space-y-3">
-                            <div v-if="stats.audit_overdue > 0" class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                                <div class="text-sm">
-                                    <p class="font-bold text-orange-400">{{ stats.audit_overdue }} Assets</p>
-                                    <p class="text-xs text-slate-400">Overdue for Audit</p>
+                                
+                                <div v-if="req.status === 'PENDING'" class="flex gap-1">
+                                    <Link :href="route('loan-requests.index')" class="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 rounded transition-colors">
+                                        Review
+                                    </Link>
                                 </div>
-                                <Link :href="route('audits.index')">
-                                    <Button size="sm" variant="secondary" class="h-8 bg-white/10 hover:bg-white/20 text-white border-0">Audit</Button>
-                                </Link>
                             </div>
 
-                            <div v-if="stats.maintenance_pending > 0" class="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10">
-                                <div class="text-sm">
-                                    <p class="font-bold text-red-400">{{ stats.maintenance_pending }} Tickets</p>
-                                    <p class="text-xs text-slate-400">Pending Approval</p>
-                                </div>
-                                <Button size="sm" variant="secondary" class="h-8 bg-white/10 hover:bg-white/20 text-white border-0">View</Button>
+                            <div v-if="latest_requests.length === 0" class="text-center py-6 text-muted-foreground text-sm">
+                                No pending requests.
                             </div>
-                            
-                            <div v-if="stats.audit_overdue === 0 && stats.maintenance_pending === 0" class="text-center py-4 text-sm text-slate-400">
-                                <CheckCircle2 class="w-8 h-8 mx-auto mb-2 text-emerald-500" />
-                                All systems healthy!
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                </div>
             </div>
         </div>
     </AppLayout>

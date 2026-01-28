@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
 
 class AssetHistory extends Model
 {
     use HasFactory;
+
+    use LogsActivity;
 
     protected $fillable = [
         'asset_id',
@@ -40,5 +45,14 @@ class AssetHistory extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logAll() // Catat semua field
+            ->logOnlyDirty() // Hanya catat yang berubah saja
+            ->dontLogIfAttributesChangedOnly(['updated_at']) // Abaikan timestamp
+            ->useLogName('asset'); // Label log
     }
 }
