@@ -1,6 +1,6 @@
 # 📦 IT Asset Management System
 
-Sistem Informasi Manajemen Aset (SIM Aset) berbasis web modern untuk membantu perusahaan mengelola inventaris IT, melacak peminjaman ke karyawan, dan memonitor riwayat perawatan perangkat.
+Sistem Informasi Manajemen Aset berbasis web modern untuk membantu perusahaan mengelola inventaris IT, melacak peminjaman ke karyawan, dan memonitor riwayat perawatan perangkat.
 
 Dibangun menggunakan **Laravel**, **Inertia.js**, dan **Vue 3** dengan antarmuka yang bersih menggunakan **Shadcn UI** & **Tailwind CSS**.
 
