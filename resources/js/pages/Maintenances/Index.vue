@@ -7,9 +7,10 @@ import MaintenanceTable from '@/components/Maintenances/MaintenanceTable.vue';
 import MaintenanceModal from '@/components/Maintenances/MaintenanceModal.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Download } from 'lucide-vue-next'; // Added Download import
+import { Plus, Search, Download } from 'lucide-vue-next';
 
-// Props passed from MaintenanceController::index
+const breadcrumbs = [{ title: 'Maintenance Logs', href: route('maintenances.index') }];
+
 const props = defineProps<{
     maintenances: any;
     assets: any[];
@@ -76,7 +77,7 @@ const exportExcel = () => {
 
     <Head title="Maintenance Logs" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-6 space-y-6">
 
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

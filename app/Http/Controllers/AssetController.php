@@ -193,8 +193,8 @@ class AssetController extends Controller
             'status_after' => 'BORROWED',
             'condition' => 'GOOD',
             'location_id' => $request->location_id ?? $asset->location_id,
-            'notes' => $request->notes . " [Tipe: " . $request->loan_type .
-                ($request->loan_type === 'SHORT_TERM' ? ", Due: " . $request->due_date : "") . "]",
+            'notes' => " [Tipe: " . $request->loan_type .
+                ($request->loan_type === 'SHORT_TERM' ? ", Due: " . $request->due_date : "") . "] " . $request->notes,
         ]);
 
         return back()->with('success', 'Aset berhasil dipinjamkan (' . $request->loan_type . ').');

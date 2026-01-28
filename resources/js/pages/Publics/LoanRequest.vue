@@ -32,7 +32,6 @@ const submit = () => {
         onSuccess: () => {
             form.reset();
             isSuccess.value = true;
-            // Auto hide success message after 5 seconds
             setTimeout(() => isSuccess.value = false, 5000);
         },
         preserveScroll: true,

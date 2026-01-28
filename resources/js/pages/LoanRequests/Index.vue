@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, XCircle, Clock, Calendar } from 'lucide-vue-next';
 import { route } from 'ziggy-js';
 
+const breadcrumbs = [{ title: 'Loan Request', href: route('loan-requests.index') }];
+
 const props = defineProps<{
     requests: { data: any[], links: any[] };
 }>();
@@ -69,9 +71,9 @@ const approve = (req: any) => {
 
 <template>
 
-    <Head title="Loan Approvals" />
+    <Head title="Loan Request" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-6">
             <div class="mb-6 flex justify-between items-center">
                 <div>

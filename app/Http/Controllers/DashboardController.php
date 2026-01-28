@@ -34,7 +34,6 @@ class DashboardController extends Controller
             ->get();
 
         $latestRequests = LoanRequest::with(['asset', 'employee'])
-            // Urutkan: PENDING paling atas, lalu berdasarkan tanggal terbaru
             ->orderByRaw("FIELD(status, 'PENDING', 'APPROVED', 'REJECTED')")
             ->latest()
             ->limit(5)

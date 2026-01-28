@@ -1,17 +1,19 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { 
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
-import { 
-    Card, CardContent, CardHeader, CardTitle, CardDescription 
+import {
+    Card, CardContent, CardHeader, CardTitle, CardDescription
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileClock, User, ArrowRight } from 'lucide-vue-next';
+import { FileClock, User } from 'lucide-vue-next';
 
 defineProps({ logs: Object });
+
+const breadcrumbs = [{ title: 'Activity Logs', href: route('logs.index') }];
 
 const formatDate = (date) => {
     return new Date(date).toLocaleString('id-ID', {
@@ -20,12 +22,11 @@ const formatDate = (date) => {
     });
 };
 
-// Helper warna badge berdasarkan aksi
 const getVariant = (action) => {
     switch (action) {
-        case 'created': return 'default'; // Hitam/Primary
-        case 'updated': return 'secondary'; // Abu-abu/Biru muda
-        case 'deleted': return 'destructive'; // Merah
+        case 'created': return 'default';
+        case 'updated': return 'secondary';
+        case 'deleted': return 'destructive';
         default: return 'outline';
     }
 };
@@ -39,11 +40,12 @@ const getActionLabel = (description) => {
 </script>
 
 <template>
+
     <Head title="Activity Logs" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="container mx-auto py-6 px-4 space-y-6">
-            
+
             <div class="flex items-center gap-2">
                 <div class="p-2 bg-primary/10 rounded-lg">
                     <FileClock class="w-6 h-6 text-primary" />
@@ -55,36 +57,32 @@ const getActionLabel = (description) => {
             </div>
 
             <Card>
-                <CardHeader class="pb-3 border-b">
-                    <CardTitle class="text-lg">Riwayat Terbaru</CardTitle>
-                    <CardDescription>
-                        Menampilkan {{ logs.data.length }} aktivitas terakhir.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent class="p-0">
-                    <Table>
+                <CardContent class="p-0 overflow-x-auto">
+                    <Table class="min-w-[1000px]">
                         <TableHeader>
                             <TableRow>
-                                <TableHead class="w-[180px]">Waktu</TableHead>
-                                <TableHead class="w-[150px]">User</TableHead>
-                                <TableHead class="w-[100px]">Aksi</TableHead>
-                                <TableHead class="w-[200px]">Target Data</TableHead>
-                                <TableHead>Detail Perubahan</TableHead>
+                                <TableHead class="w-[180px] whitespace-nowrap">Waktu</TableHead>
+                                <TableHead class="w-[180px] whitespace-nowrap">User</TableHead>
+                                <TableHead class="w-[100px] whitespace-nowrap">Aksi</TableHead>
+                                <TableHead class="w-[180px] whitespace-nowrap">Target</TableHead>
+                                <TableHead class="min-w-[400px]">Detail Perubahan</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             <TableRow v-for="log in logs.data" :key="log.id" class="group hover:bg-muted/50">
-                                
-                                <TableCell class="align-top font-mono text-xs text-muted-foreground">
+
+                                <TableCell class="align-top font-mono text-xs text-muted-foreground whitespace-nowrap">
                                     {{ formatDate(log.created_at) }}
                                 </TableCell>
 
                                 <TableCell class="align-top">
                                     <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
+                                        <div
+                                            class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0">
                                             <User class="w-3 h-3 text-muted-foreground" />
                                         </div>
-                                        <span class="font-medium text-sm">
+                                        <span class="font-medium text-sm truncate max-w-[140px]"
+                                            :title="log.causer?.name">
                                             {{ log.causer ? log.causer.name : 'System' }}
                                         </span>
                                     </div>
@@ -98,50 +96,51 @@ const getActionLabel = (description) => {
 
                                 <TableCell class="align-top">
                                     <div class="flex flex-col">
-                                        <span class="font-semibold text-sm">
+                                        <span class="font-semibold text-sm truncate max-w-[150px]">
                                             {{ log.subject_type?.split('\\').pop() }}
                                         </span>
                                         <span class="text-xs text-muted-foreground font-mono">
-                                            ID: #{{ log.subject_id }}
+                                            #{{ log.subject_id }}
                                         </span>
                                     </div>
                                 </TableCell>
 
-                                <TableCell class="align-top">
-                                    <ScrollArea class="h-full max-h-[150px] w-full rounded-md border p-2 bg-muted/30">
-                                        <div v-if="log.properties && log.properties.attributes" class="space-y-1.5">
-                                            
-                                            <div v-for="(value, key) in log.properties.attributes" :key="key" 
-                                                class="text-xs grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
-                                                
-                                                <span class="font-semibold text-muted-foreground min-w-[80px]">
-                                                    {{ key }}
+                                <TableCell class="align-top py-4 pr-6">
+                                        <div v-if="log.properties && log.properties.attributes"
+                                            class="text-sm space-y-3 text-slate-700 dark:text-slate-300">
+
+                                            <div v-for="(value, key) in log.properties.attributes" :key="key"
+                                                class="leading-loose border-b last:border-0 border-dashed border-slate-200 dark:border-slate-700 pb-2 last:pb-0">
+
+                                                <span v-if="log.description === 'updated' && log.properties.old">
+                                                    Mengubah <strong class="font-semibold text-foreground">{{ key
+                                                        }}</strong>
+                                                    dari
+                                                    <span
+                                                        class="inline-block my-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-0.5 rounded text-xs font-mono border border-red-200 dark:border-red-800">
+                                                        {{ log.properties.old[key] ?? 'kosong' }}
+                                                    </span>
+                                                    menjadi
+                                                    <span
+                                                        class="inline-block my-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded text-xs font-mono border border-green-200 dark:border-green-800">
+                                                        {{ value ?? 'kosong' }}
+                                                    </span>.
                                                 </span>
 
-                                                <template v-if="log.description === 'updated' && log.properties.old">
-                                                    <span class="text-red-500/80 line-through truncate max-w-[150px]" :title="log.properties.old[key]">
-                                                        {{ log.properties.old[key] ?? 'null' }}
-                                                    </span>
-                                                    
-                                                    <ArrowRight class="w-3 h-3 text-muted-foreground mx-1" />
-                                                    
-                                                    <span class="text-green-600 font-medium truncate max-w-[150px]" :title="value">
-                                                        {{ value ?? 'null' }}
-                                                    </span>
-                                                </template>
-
-                                                <template v-else>
-                                                    <span class="col-span-2 text-foreground font-medium truncate">
+                                                <span v-else>
+                                                    {{ log.description === 'created' ? 'Menetapkan' : 'Menghapus' }}
+                                                    <strong class="font-semibold text-foreground">{{ key }}</strong>:
+                                                    <span
+                                                        class="inline-block my-1 font-mono text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">
                                                         {{ value }}
-                                                    </span>
-                                                </template>
+                                                    </span>.
+                                                </span>
                                             </div>
 
                                         </div>
                                         <div v-else class="text-xs text-muted-foreground italic">
-                                            Tidak ada data atribut yang tercatat.
+                                            - Tidak ada detail perubahan -
                                         </div>
-                                    </ScrollArea>
                                 </TableCell>
 
                             </TableRow>

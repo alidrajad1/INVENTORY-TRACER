@@ -14,6 +14,8 @@ import {
 import AuditModal from '@/components/Audits/AuditModal.vue';
 import { route } from 'ziggy-js';
 
+const breadcrumbs = [{ title: 'Audit Assets', href: route('audits.index') }];
+
 const props = defineProps<{
     assets: any;
     filters: { search: string };
@@ -59,7 +61,7 @@ const getConditionColor = (condition: string) => {
 <template>
     <Head title="Audit Assets" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
             <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-6 rounded-xl border">
                 <div>

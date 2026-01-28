@@ -54,7 +54,7 @@ class LoanRequestController extends Controller
                 'status_before' => $oldStatus,
                 'status_after' => 'BORROWED',
                 'condition' => $asset->condition,
-                'notes' => 'Self-Request Approved. Alasan: ' . $loanRequest->reason,
+                'notes' => 'Self-Request Approved. ' . $loanRequest->reason,
             ]);
         });
 

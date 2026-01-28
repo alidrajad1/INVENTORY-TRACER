@@ -36,7 +36,7 @@ const getStatusVariant = (status: string) => {
     switch(status) {
         case 'APPROVED': return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400';
         case 'REJECTED': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400';
-        default: return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400'; // Pending
+        default: return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400';
     }
 };
 </script>
@@ -151,7 +151,7 @@ const getStatusVariant = (status: string) => {
                                     <p class="text-sm text-muted-foreground">
                                         <span class="font-semibold text-foreground/80"> {{ activity.asset?.name }}</span>
                                         <span v-if="activity.employee"> 
-                                            {{ activity.action === 'assign' ? 'to' : 'from' }} 
+                                            {{ activity.action === 'assign' ? ' to ' : ' from ' }} 
                                             <span class="text-primary font-medium"> {{ activity.employee.name }}</span>
                                         </span>
                                     </p>
@@ -190,7 +190,7 @@ const getStatusVariant = (status: string) => {
                                     </p>
                                     <div class="flex items-center gap-1 text-[10px] text-muted-foreground">
                                         <CalendarClock class="w-3 h-3" />
-                                        Return: {{ new Date(req.return_date).toLocaleDateString('id-ID') }}
+                                        Return: {{ new Date(req.due_date).toLocaleDateString('id-ID') }}
                                     </div>
                                 </div>
                                 
