@@ -4,8 +4,6 @@ Sistem Informasi Manajemen Aset (SIM Aset) berbasis web modern untuk membantu pe
 
 Dibangun menggunakan **Laravel**, **Inertia.js**, dan **Vue 3** dengan antarmuka yang bersih menggunakan **Shadcn UI** & **Tailwind CSS**.
 
-![Asset Dashboard Screenshot](path/to/screenshot.png) **
-
 ## ✨ Fitur Utama
 
 ### 🖥️ Manajemen Aset
@@ -77,6 +75,3 @@ Dibangun menggunakan **Laravel**, **Inertia.js**, dan **Vue 3** dengan antarmuka
     php artisan serve
     ```
 
-## 📄 Lisensi
-
-Project ini bersifat open-source di bawah lisensi [MIT](https://opensource.org/licenses/MIT).
