@@ -228,9 +228,6 @@ const handleExport = () => {
                                 <SelectItem value="AVAILABLE">Available</SelectItem>
                                 <SelectItem value="BORROWED">Borrowed</SelectItem>
                                 <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
-                                <SelectItem value="BROKEN">Broken</SelectItem>
-                                <SelectItem value="LOST">Lost</SelectItem>
-                                <SelectItem value="DISPOSED">Disposed</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
