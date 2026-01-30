@@ -57,7 +57,7 @@ defineProps<{
                     </div>
                     <div class="text-left">
                         <div class="font-bold text-slate-800 dark:text-slate-100">Scan QR Code</div>
-                        <div class="text-slate-500 dark:text-slate-400 text-xs">Cek detail barang</div>
+                        <div class="text-slate-500 dark:text-slate-400 text-xs">Cek detail barang & laporkan kerusakan</div>
                     </div>
                 </div>
                 <ChevronRight class="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition-transform" />
